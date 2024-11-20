@@ -36,7 +36,7 @@ const Products = () => {
               <p>Price: {product.productPrice} SEK</p>
               <p>Description: {product.productDescription}</p>
               <p>Quantity: {product.productQuantity}</p>
-              <img src={product.productImage} alt={product.productName} />
+              <img src={product.productImage} alt={product.productName} height={200}  />
             </div>
           ))
         )}
