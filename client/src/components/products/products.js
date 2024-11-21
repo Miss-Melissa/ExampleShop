@@ -6,7 +6,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedSizes, setSelectedSizes] = useState({});
+  const [selectedSizes, setSelectedSizes] = useState({}); // To track selected sizes per product
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -33,8 +33,7 @@ const Products = () => {
   const handleSizeChange = (productId, size) => {
     setSelectedSizes(prevState => {
       const updatedSizes = { ...prevState };
-      // Only allow one size to be selected at a time for each product
-      updatedSizes[productId] = updatedSizes[productId] === size ? null : size;
+      updatedSizes[productId] = size; // Update the selected size for the product
       return updatedSizes;
     });
   };
@@ -58,19 +57,22 @@ const Products = () => {
               <p>Quantity: {product.productQuantity}</p>
             </Link>
 
-            {product.productSize && Array.isArray(product.productSize) && product.productSize.length > 0 && (
+            {/* Only show the size dropdown if the product has sizes */}
+            {product.productSize && product.productSize.length > 0 && (
               <div>
                 <h4>Available Sizes:</h4>
-                {product.productSize.map((size) => (
-                  <label key={size} style={{ marginRight: "10px" }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedSizes[product._id] === size}
-                      onChange={() => handleSizeChange(product._id, size)}
-                    />
-                    {size}
-                  </label>
-                ))}
+                <select 
+                  value={selectedSizes[product._id] || ''}
+                  onChange={(e) => handleSizeChange(product._id, e.target.value)}
+                  style={{ padding: '5px', margin: '10px 0' }}
+                >
+                  <option value="">Select a size</option>
+                  {product.productSize.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
           </div>

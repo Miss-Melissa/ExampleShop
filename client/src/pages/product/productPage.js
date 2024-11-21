@@ -6,6 +6,7 @@ import Product from '../../components/product/product';  // Assuming Product is 
 const ProductPage = () => {
   const { id } = useParams(); // Get product ID from the URL
   const [product, setProduct] = useState(null); // Initialize product state
+  const [selectedSize, setSelectedSize] = useState(''); // State for selected size
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -22,6 +23,11 @@ const ProductPage = () => {
     fetchProduct(); // Fetch product when component mounts or ID changes
   }, [id]); 
 
+  // Handle size selection change
+  const handleSizeChange = (size) => {
+    setSelectedSize(size); // Update the selected size
+  };
+
   // Loading state while waiting for the product
   if (!product) {
     return <p>Loading product details...</p>;
@@ -29,7 +35,11 @@ const ProductPage = () => {
 
   return (
     <div>
-      <Product product={product} /> 
+      <Product 
+        product={product} 
+        selectedSize={selectedSize} 
+        handleSizeChange={handleSizeChange} 
+      />
     </div>
   );
 };
