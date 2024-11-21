@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import Products from '../../components/products/products'; // Import Products Component
+import ProductSearch from '../../components/productsearch/productsearch';
 
 function Home() {
-  const [searchQuery, setSearchQuery] = useState(''); // To store search query
+  const [searchQuery, setSearchQuery] = useState(''); // State to store search query
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value); // Update search query as the user types
+  // Function to handle search input from the ProductSearch component
+  const handleSearch = (query) => {
+    setSearchQuery(query); // Update search query when user types
   };
 
   return (
     <div>
-      {/* Search Input */}
+      {/* Pass the handleSearch function to ProductSearch */}
       <div>
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
+        <ProductSearch onSearch={handleSearch} />
       </div>
 
       {/* Conditional rendering based on search query */}
@@ -28,7 +25,6 @@ function Home() {
         // If no search query, show the welcome message and the Products component with no filter
         <div>
           <h1>Welcome to the Shop!</h1>
-          <p>Search for products by name or category.</p>
           <Products searchQuery="" /> {/* Ensure all products are shown by passing an empty query */}
         </div>
       )}

@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import Product from '../../components/product/product';  // Assuming Product is in this path
-import ProductSearch from '../../components/productsearch/productsearch';
 
 const ProductPage = () => {
   const { id } = useParams(); // Get product ID from the URL
   const [product, setProduct] = useState(null); // Initialize product state
-  const [selectedSize, setSelectedSize] = useState(''); // State for selected size
+  const [loading, setLoading] = useState(true); // Track loading state
+  const [error, setError] = useState(null); // Track error state
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -18,30 +18,29 @@ const ProductPage = () => {
         setProduct(response.data); // Set product data in state
       } catch (error) {
         console.error('Error fetching product:', error);
+        setError('Failed to fetch product details. Please try again later.'); // Set error message
+      } finally {
+        setLoading(false); // Stop loading when data is fetched or error occurs
       }
     };
 
     fetchProduct(); // Fetch product when component mounts or ID changes
   }, [id]); 
 
-  // Handle size selection change
-  const handleSizeChange = (size) => {
-    setSelectedSize(size); // Update the selected size
-  };
-
-  // Loading state while waiting for the product
-  if (!product) {
+  // Handle loading state
+  if (loading) {
     return <p>Loading product details...</p>;
   }
 
+  // Handle error state
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  // If product data exists, display it using the Product component
   return (
     <div>
-      <ProductSearch />
-      <Product 
-        product={product} 
-        selectedSize={selectedSize} 
-        handleSizeChange={handleSizeChange} 
-      />
+      <Product product={product} />
     </div>
   );
 };
