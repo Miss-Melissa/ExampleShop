@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import BuyBtn from '../buybtn/buybtn';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSizes, setSelectedSizes] = useState({}); // To track selected sizes per product
+
+
+  const handleBuyClick = () => {
+    alert('Product added to cart!');
+    console.log(handleBuyClick);
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -57,11 +64,13 @@ const Products = () => {
               <p>Quantity: {product.productQuantity}</p>
             </Link>
 
+            <BuyBtn onClick={handleBuyClick} buttonText="Add to Cart" />
+
             {/* Only show the size dropdown if the product has sizes */}
             {product.productSize && product.productSize.length > 0 && (
               <div>
                 <h4>Available Sizes:</h4>
-                <select 
+                <select
                   value={selectedSizes[product._id] || ''}
                   onChange={(e) => handleSizeChange(product._id, e.target.value)}
                   style={{ padding: '5px', margin: '10px 0' }}

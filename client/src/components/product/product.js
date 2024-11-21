@@ -1,8 +1,17 @@
 import React from 'react';
+import BackBtn from '../backbtn/backbtn';
+import BuyBtn from '../buybtn/buybtn';
+
 
 const Product = ({ product, selectedSize, handleSizeChange }) => {
+
+  const handleBuyClick = () => {
+    alert('Product added to cart!');
+    console.log(handleBuyClick);
+  };
+
   if (!product) {
-    return <p>No product data available</p>; // If there's no product, display a message
+    return <p>No product data available</p>; // Display a fallback message
   }
 
   return (
@@ -12,13 +21,14 @@ const Product = ({ product, selectedSize, handleSizeChange }) => {
       <p>Price: {product.productPrice} SEK</p>
       <p>Description: {product.productDescription}</p>
       <p>Quantity: {product.productQuantity}</p>
-
-      {/* Only show the dropdown for sizes if product has sizes */}
+      <BuyBtn onClick={handleBuyClick} buttonText="Add to Cart" />
+      <BackBtn />
+      {/* Dropdown for sizes if available */}
       {product.productSize && product.productSize.length > 0 && (
         <div>
           <h4>Available Sizes:</h4>
-          <select 
-            value={selectedSize} 
+          <select
+            value={selectedSize}
             onChange={(e) => handleSizeChange(e.target.value)}
             style={{ padding: '5px', margin: '10px 0' }}
           >

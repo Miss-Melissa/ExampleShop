@@ -10,7 +10,13 @@ import ProductPage from "./pages/product/productPage";
 function App() {
   return (
     <div>
-      <BrowserRouter>
+      <BrowserRouter
+        // Opt-in to future React Router v7 features
+        future={{
+          v7_startTransition: true, // Start transition early for better performance
+          v7_relativeSplatPath: true, // New behavior for relative splat paths
+        }}
+      >
         <Header />
         <main>
           <Routes>
@@ -18,8 +24,8 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/products" element={<ProductsPage />} />
-            <Route path="/products/:id" element={<ProductPage />} />           
-            </Routes>
+            <Route path="/products/:id" element={<ProductPage />} />
+          </Routes>
         </main>
         <Footer />
       </BrowserRouter>
