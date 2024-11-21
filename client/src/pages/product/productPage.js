@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import Product from '../../components/product/product';  // Assuming Product is in this path
+import ProductSearch from '../../components/productsearch/productsearch';
 
 const ProductPage = () => {
   const { id } = useParams(); // Get product ID from the URL
@@ -35,6 +36,7 @@ const ProductPage = () => {
 
   return (
     <div>
+      <ProductSearch />
       <Product 
         product={product} 
         selectedSize={selectedSize} 
