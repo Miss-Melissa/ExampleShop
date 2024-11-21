@@ -20,14 +20,17 @@ function Home() {
         />
       </div>
 
-      {/* Conditional rendering */}
+      {/* Conditional rendering based on search query */}
       {searchQuery ? (
-        <Products searchQuery={searchQuery} /> // Show products if there is a search query
+        // If there is a search query, show products with the search query filter
+        <Products searchQuery={searchQuery} />
       ) : (
+        // If no search query, show the welcome message and the Products component with no filter
         <div>
           <h1>Welcome to the Shop!</h1>
           <p>Search for products by name or category.</p>
-        </div> // Show basic content if there is no search query
+          <Products searchQuery="" /> {/* Ensure all products are shown by passing an empty query */}
+        </div>
       )}
     </div>
   );
