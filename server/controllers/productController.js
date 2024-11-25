@@ -1,78 +1,87 @@
 const Product = require('../models/productModel');
 const mongoose = require('mongoose');
 
-
 const getProducts = async (req, res) => {
-    console.log('Fetching products with filters...');
-    
-    const { category, query, page = 1, limit = 10, price_min, price_max } = req.query;
+    const {
+        query, category, color, brand, gender, size,
+        price_min, price_max, page = 1, limit = 10
+    } = req.query;
 
-    let searchCriteria = {};  // Initialize search criteria
+    console.log('Received filters:', { query, category, color, brand, gender, size, price_min, price_max });
 
-    // Filter by category if provided
-    if (category) {
-        searchCriteria.productCategory = { $regex: category, $options: 'i' }; // Case-insensitive category search
-    }
+    // Parse page and limit as numbers
+    const parsedPage = parseInt(page, 10) || 1; // Default to 1 if not provided
+    const parsedLimit = parseInt(limit, 10) || 10; // Default to 10 if not provided
 
-    // Filter by product name if provided
-    if (query) {
-        searchCriteria.productName = { $regex: query, $options: 'i' }; // Case-insensitive product name search
-    }
+    // Parse price_min and price_max as numbers
+    const minPrice = price_min ? parseFloat(price_min) : undefined;
+    const maxPrice = price_max ? parseFloat(price_max) : undefined;
 
-    // Optional price range filter
-    if (price_min && price_max) {
-        searchCriteria.productPrice = { $gte: price_min, $lte: price_max };
-    } else if (price_min) {
-        searchCriteria.productPrice = { $gte: price_min }; // Only min price filter
-    } else if (price_max) {
-        searchCriteria.productPrice = { $lte: price_max }; // Only max price filter
-    }
+    // Parse the size parameter if provided
+    const sizeArray = size ? size.split(',').map(s => s.trim()) : [];
+
+    // Build search criteria dynamically
+    const searchCriteria = {
+        ...(query && { productName: { $regex: query, $options: 'i' } }),
+        ...(category && { productCategory: { $regex: category, $options: 'i' } }),
+        ...(color && { productColor: { $regex: color, $options: 'i' } }),
+        ...(brand && { productBrand: { $regex: brand, $options: 'i' } }),
+        ...(gender && { productGender: { $regex: gender, $options: 'i' } }),
+        ...(sizeArray.length > 0 && { productSize: { $in: sizeArray } }), // Ensure size is an array if it's provided
+        ...(minPrice && maxPrice && { productPrice: { $gte: minPrice, $lte: maxPrice } }),
+        ...(minPrice && !maxPrice && { productPrice: { $gte: minPrice } }),
+        ...(maxPrice && !minPrice && { productPrice: { $lte: maxPrice } }),
+    };
 
     try {
-        const skip = (page - 1) * limit;  // Pagination
-        const products = await Product.find(searchCriteria)
-            .skip(skip)
-            .limit(Number(limit));
+        // Validate pagination values
+        if (parsedPage < 1 || parsedLimit < 1) {
+            return res.status(400).json({ message: 'Page and limit must be greater than 0' });
+        }
 
-        if (products.length === 0) {
+        // Count total products based on search criteria
+        const totalProducts = await Product.countDocuments(searchCriteria);
+
+        // Fetch products with pagination
+        const products = await Product.find(searchCriteria)
+            .skip((parsedPage - 1) * parsedLimit) // Skip based on page number
+            .limit(parsedLimit); // Limit to the number of items per page
+
+        if (!products.length) {
             return res.status(404).json({ message: 'No products found matching the criteria' });
         }
 
-        res.json(products);
+        // Calculate total pages for pagination
+        const totalPages = Math.ceil(totalProducts / parsedLimit);
+        res.json({ products, totalPages });
     } catch (err) {
         console.error('Error fetching products:', err.message);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Function to get a single product by ID
 const getProductById = async (req, res) => {
-    console.log('Fetching product with ID:', req.params.id);
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+        console.log('Invalid or missing product ID:', id);
+        return res.status(400).json({ message: 'Invalid product ID format' });
+    }
 
     try {
-        // Validate product ID format
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            console.log('Invalid product ID format');
-            return res.status(400).json({ message: 'Invalid product ID format' });
-        }
-
-        const product = await Product.findById(req.params.id);
-
-        // If no product found, return an error message
+        const product = await Product.findById(id);
         if (!product) {
-            console.log('Product not found');
+            console.log('Product not found with ID:', id);
             return res.status(404).json({ message: 'Product not found' });
         }
-
-        console.log('Product found:', product);
-        res.json(product); // Return the product data
+        res.json(product);
     } catch (err) {
-        console.error('Error:', err.message);
+        console.error('Error fetching product by ID:', err.message);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
 module.exports = {
     getProducts,
-    getProductById
+    getProductById,
 };

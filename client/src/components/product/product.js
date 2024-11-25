@@ -18,20 +18,13 @@ const Product = ({ product, selectedSize, handleSizeChange }) => {
     <div>
       <h1>{product.productName}</h1>
       <img src={product.productImage} alt={product.productName} height={300} />
-      <p>Price: {product.productPrice} SEK</p>
-      <p>Description: {product.productDescription}</p>
-      <p>Quantity: {product.productQuantity}</p>
-      <BuyBtn onClick={handleBuyClick} buttonText="Add to Cart" />
-      <BackBtn />
-      {/* Dropdown for sizes if available */}
-      {product.productSize && product.productSize.length > 0 && (
+            {/* Dropdown for sizes if available */}
+            {product.productSize && product.productSize.length > 0 && (
         <div>
           <h4>Available Sizes:</h4>
           <select
             value={selectedSize}
-            onChange={(e) => handleSizeChange(e.target.value)}
-            style={{ padding: '5px', margin: '10px 0' }}
-          >
+            onChange={(e) => handleSizeChange(e.target.value)}>
             <option value="">Select a size</option>
             {product.productSize.map((size) => (
               <option key={size} value={size}>
@@ -41,6 +34,11 @@ const Product = ({ product, selectedSize, handleSizeChange }) => {
           </select>
         </div>
       )}
+      <p>Price: {product.productPrice} SEK</p>
+      <p>Description: {product.productDescription}</p>
+      <p>Quantity: {product.productQuantity}</p>
+      <BuyBtn onClick={handleBuyClick} buttonText="Add to Cart" />
+      <BackBtn />
     </div>
   );
 };

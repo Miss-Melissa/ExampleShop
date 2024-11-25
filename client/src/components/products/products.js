@@ -1,98 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import BuyBtn from '../buybtn/buybtn';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import BuyBtn from "../buybtn/buybtn";
+import ProductFilter from "../productfilter/productfilter";
 
 const Products = ({ searchQuery }) => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]); // All fetched products
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filteredProducts, setFilteredProducts] = useState([]); // Filtered products based on search query
+  const [page, setPage] = useState(1); // Current page for pagination
+  const [totalPages, setTotalPages] = useState(1); // Total pages for pagination
+  const [limit] = useState(10); // Number of products per page
+  const [filters, setFilters] = useState({
+    category: "",
+    color: "",
+    brand: "",
+    gender: "",
+    size: "",
+    price_min: 0,
+    price_max: 1000,
+  });
 
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+  // Update the filters immediately on input change
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+
+  // Set a debounce function to update the filters after user stops typing
   useEffect(() => {
-    // Function to fetch products
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters); // Update debouncedFilters only after typing stops
+    }, 500); // Adjust the time for debounce (500ms)
+
+    return () => {
+      clearTimeout(timer); // Clear timeout if the user types again
+    };
+  }, [filters]);
+
+  // Fetch products based on filters and pagination
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true); // Show loading spinner while fetching
-        const response = await axios.get('http://localhost:5000/products/');
-        console.log("Fetched product data:", response.data);
+        setLoading(true);
+        const response = await axios.get("http://localhost:5000/products", {
+          params: {
+            page,
+            limit,
+            query: searchQuery,
+            ...debouncedFilters, // Send debounced filters to the backend
+          },
+        });
 
-        setProducts(response.data); // Save fetched products
-        setFilteredProducts(response.data); // Set all products initially
-        setLoading(false); // Stop loading spinner
+        setProducts(response.data.products); // Save fetched products
+        setTotalPages(response.data.totalPages); // Set total pages for pagination
       } catch (error) {
-        console.error('Error fetching products:', error);
-        setError('Error fetching products');
-        setLoading(false); // Stop loading spinner even if there is an error
+        console.error("Error fetching products:", error); // Log error to console, but don't display
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProducts();
-  }, []); // Fetch products only once when the component mounts
-
-  useEffect(() => {
-    // Filter products based on search query
-    if (searchQuery.trim() === '') {
-      setFilteredProducts(products); // If no search query, show all products
-    } else {
-      const lowercasedQuery = searchQuery.toLowerCase();
-      const filtered = products.filter((product) => {
-        const productName = product.productName ? product.productName.toLowerCase() : '';
-        const productCategory = product.productCategory ? product.productCategory.toLowerCase() : '';
-        return (
-          productName.includes(lowercasedQuery) ||
-          productCategory.includes(lowercasedQuery)
-        );
-      });
-      setFilteredProducts(filtered); // Update the filtered list
-    }
-  }, [searchQuery, products]); // Re-filter products when searchQuery or products change
+    fetchProducts(); // Fetch products when dependencies change
+  }, [page, searchQuery, debouncedFilters, limit]);
 
   const handleBuyClick = () => {
-    alert('Product added to cart!');
+    alert("Product added to cart!");
   };
 
+  // Pagination handler
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  // Render the UI
   if (loading) return <p>Loading products...</p>;
 
   return (
     <div>
-      {error && <p>{error}</p>}
+      {/* Use the Filter component */}
+      <ProductFilter
+        filters={filters}
+        handleFilterChange={handleFilterChange}
+      />
 
       <div>
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <div key={product._id} style={{ border: "1px solid #ccc", margin: "10px", padding: "10px" }}>
+        {products.length > 0 ? (
+          products.map((product) => (
+            <div
+              key={
+                product._id || `${product.productName}-${product.productPrice}` // Use a fallback unique key if _id is missing
+              }
+            >
               <Link to={`/products/${product._id}`}>
                 <h3>{product.productName}</h3>
-                <img src={product.productImage} alt={product.productName} height={200} />
-                <p>Price: {product.productPrice} SEK</p>
-                <p>Description: {product.productDescription}</p>
-                <p>Quantity: {product.productQuantity}</p>
+                <img
+                  src={product.productImage}
+                  alt={product.productName}
+                  height={200}
+                />
+                <p>Price: ${product.productPrice}</p>
+                <BuyBtn onClick={handleBuyClick} />
               </Link>
-
-              <BuyBtn onClick={handleBuyClick} buttonText="Add to Cart" />
-
-              {/* Only show the size dropdown if the product has sizes */}
-              {product.productSize && product.productSize.length > 0 && (
-                <div>
-                  <h4>Available Sizes:</h4>
-                  <select
-                    style={{ padding: '5px', margin: '10px 0' }}
-                  >
-                    <option value="">Select a size</option>
-                    {product.productSize.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
           ))
         ) : (
-          <p>No products match your search.</p>
+          <p>No products found.</p>
         )}
+
+        {/* Pagination Controls */}
+        <div>
+          {page > 1 && ( // Only render the Previous button if the page is greater than 1
+            <button onClick={() => handlePageChange(page - 1)}>Previous Page</button>
+          )}
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages && ( // Only render the Next button if the page is less than the total pages
+            <button onClick={() => handlePageChange(page + 1)}>Next Page</button>
+          )}
+        </div>
       </div>
     </div>
   );

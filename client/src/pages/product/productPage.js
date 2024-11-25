@@ -10,6 +10,12 @@ const ProductPage = () => {
   const [error, setError] = useState(null); // Track error state
 
   useEffect(() => {
+    if (!id) {
+      console.error('Product ID is missing or undefined');
+      setError('Product ID is missing');
+      return;
+    }
+
     const fetchProduct = async () => {
       try {
         console.log('Fetching product with ID:', id); // Debugging: Log the ID

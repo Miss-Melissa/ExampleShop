@@ -7,11 +7,16 @@ const productSchema = new mongoose.Schema({
     productDescription: { type: String, required: true },
     productQuantity: { type: Number, required: true },
     productSize: { type: [String], required: true },
-    productCategory: { type: String, required: true }, // added productCategory field
+    productCategory: { type: String, required: true },
+    productBrand: { type: String, required: true }, 
+    productColor: { type: String, required: true }, 
+    productGender: { type: String, enum: ['Men', 'Women', 'Unisex'], required: true },
 });
 
 // Adding indexes for faster searching
 productSchema.index({ productCategory: 1 });
 productSchema.index({ productName: 1 });
+productSchema.index({ productBrand: 1 }); 
+productSchema.index({ productColor: 1 }); 
 
 module.exports = mongoose.model('Product', productSchema);
