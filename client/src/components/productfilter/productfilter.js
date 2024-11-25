@@ -47,6 +47,46 @@ function ProductFilter({ filters, handleFilterChange }) {
     }
   };
 
+  // Check if any filter is selected, and apply filters or fetch all products
+  const isFilterApplied = () => {
+    return (
+      filters.category ||
+      filters.color ||
+      filters.brand ||
+      filters.size ||
+      filters.gender ||
+      filters.price_min !== 0 ||
+      filters.price_max !== 1000
+    );
+  };
+
+  // Fetch products based on applied filters
+  useEffect(() => {
+    const fetchFilteredProducts = async () => {
+      try {
+        const queryParams = new URLSearchParams();
+
+        if (isFilterApplied()) {
+          if (filters.category) queryParams.append('category', filters.category);
+          if (filters.color) queryParams.append('color', filters.color);
+          if (filters.brand) queryParams.append('brand', filters.brand);
+          if (filters.size) queryParams.append('size', filters.size);
+          if (filters.gender) queryParams.append('gender', filters.gender);
+          if (filters.price_min) queryParams.append('price_min', filters.price_min);
+          if (filters.price_max) queryParams.append('price_max', filters.price_max);
+        }
+
+        const response = await axios.get(`http://localhost:5000/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`);
+        // Handle the response and display products
+        console.log(response.data); // Update the UI with fetched products
+      } catch (error) {
+        console.error("Error fetching filtered products:", error);
+      }
+    };
+
+    fetchFilteredProducts();
+  }, [filters]); // Whenever filters change, fetch products
+
   return (
     <div>
       {/* Category Filter */}
