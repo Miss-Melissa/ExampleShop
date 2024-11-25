@@ -5,11 +5,11 @@ import BuyBtn from "../buybtn/buybtn";
 import ProductFilter from "../productfilter/productfilter";
 
 const Products = ({ searchQuery }) => {
-  const [products, setProducts] = useState([]); // All fetched products
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1); // Current page for pagination
-  const [totalPages, setTotalPages] = useState(1); // Total pages for pagination
-  const [limit] = useState(10); // Number of products per page
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10);
   const [filters, setFilters] = useState({
     category: "",
     color: "",
@@ -21,10 +21,8 @@ const Products = ({ searchQuery }) => {
   });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
-  // State for storing selected size for each product
   const [selectedSizes, setSelectedSizes] = useState({});
 
-  // Update the filters immediately on input change
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -33,18 +31,13 @@ const Products = ({ searchQuery }) => {
     }));
   };
 
-  // Set a debounce function to update the filters after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedFilters(filters); // Update debouncedFilters only after typing stops
-    }, 500); // Adjust the time for debounce (500ms)
-
-    return () => {
-      clearTimeout(timer); // Clear timeout if the user types again
-    };
+      setDebouncedFilters(filters);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [filters]);
 
-  // Fetch products based on filters and pagination
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -54,27 +47,25 @@ const Products = ({ searchQuery }) => {
             page,
             limit,
             query: searchQuery,
-            ...debouncedFilters, // Send debounced filters to the backend
+            ...debouncedFilters,
           },
         });
-
-        setProducts(response.data.products); // Save fetched products
-        setTotalPages(response.data.totalPages); // Set total pages for pagination
+        setProducts(response.data.products);
+        setTotalPages(response.data.totalPages);
       } catch (error) {
-        console.error("Error fetching products:", error); // Log error to console, but don't display
+        console.error("Error fetching products:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts(); // Fetch products when dependencies change
+    fetchProducts();
   }, [page, searchQuery, debouncedFilters, limit]);
 
-  // Handle size change for a specific product
   const handleSizeChange = (productId, size) => {
     setSelectedSizes((prevSizes) => ({
       ...prevSizes,
-      [productId]: size, // Update selected size for the specific product
+      [productId]: size,
     }));
   };
 
@@ -82,23 +73,17 @@ const Products = ({ searchQuery }) => {
     alert(`Product ${productId} added to cart!`);
   };
 
-  // Pagination handler
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
     }
   };
 
-  // Render the UI
   if (loading) return <p>Loading products...</p>;
 
   return (
     <div>
-      {/* Use the Filter component */}
-      <ProductFilter
-        filters={filters}
-        handleFilterChange={handleFilterChange}
-      />
+      <ProductFilter filters={filters} handleFilterChange={handleFilterChange} />
 
       <div>
         {products.length > 0 ? (
@@ -106,22 +91,32 @@ const Products = ({ searchQuery }) => {
             <div key={product._id || `${product.productName}-${product.productPrice}`}>
               <Link to={`/products/${product._id}`}>
                 <h3>{product.productName}</h3>
-                {/* Display the product image */}
-                <img
-                  src={`http://localhost:5000/uploads/${product.productImage}`} // Image path
-                  alt={product.productName}
-                  height={200}
-                />
+
+                {/* Render multiple images if available */}
+                {product.productImages && product.productImages.length > 0 ? (
+                  <div>
+                    {product.productImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={`http://localhost:5000/uploads/${image}`}
+                        alt={`${product.productName} image ${index + 1}`}
+                        style={{ width: "200px", margin: "10px" }} // Adjust styling as needed
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p>No images available</p>
+                )}
+
                 <p>Price: ${product.productPrice}</p>
               </Link>
 
-              {/* Dropdown for sizes if available */}
               {product.productSize && product.productSize.length > 0 ? (
                 <div>
                   <h4>Available Sizes:</h4>
                   <select
                     value={selectedSizes[product._id] || ""}
-                    onChange={(e) => handleSizeChange(product._id, e.target.value)} // Handling size change
+                    onChange={(e) => handleSizeChange(product._id, e.target.value)}
                   >
                     <option value="">Select a size</option>
                     {product.productSize.map((size) => (
@@ -132,17 +127,16 @@ const Products = ({ searchQuery }) => {
                   </select>
                 </div>
               ) : (
-                <p>No sizes available</p> // Message if no sizes are available
+                <p>No sizes available</p>
               )}
-                              <BuyBtn onClick={() => handleBuyClick(product._id)} />
 
+              <BuyBtn onClick={() => handleBuyClick(product._id)} />
             </div>
           ))
         ) : (
           <p>No products found.</p>
         )}
 
-        {/* Pagination Controls */}
         <div>
           {page > 1 && (
             <button onClick={() => handlePageChange(page - 1)}>Previous Page</button>
