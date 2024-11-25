@@ -6,6 +6,7 @@ import About from "./pages/about/about";
 import Contact from "./pages/contact/contact";
 import ProductsPage from "./pages/products/productsPage";
 import ProductPage from "./pages/product/productPage";
+import ProductUpload from "./components/productupload/productupload";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductPage />} />
+            <Route path="/productupload" element={<ProductUpload />} />
           </Routes>
         </main>
         <Footer />

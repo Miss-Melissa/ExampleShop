@@ -8,6 +8,7 @@ const ProductPage = () => {
   const [product, setProduct] = useState(null); // Initialize product state
   const [loading, setLoading] = useState(true); // Track loading state
   const [error, setError] = useState(null); // Track error state
+  const [selectedSize, setSelectedSize] = useState(""); // Track selected size for this product
 
   useEffect(() => {
     if (!id) {
@@ -31,7 +32,12 @@ const ProductPage = () => {
     };
 
     fetchProduct(); // Fetch product when component mounts or ID changes
-  }, [id]); 
+  }, [id]);
+
+  // Handle size change for the product
+  const handleSizeChange = (size) => {
+    setSelectedSize(size); // Update the selected size
+  };
 
   // Handle loading state
   if (loading) {
@@ -46,7 +52,13 @@ const ProductPage = () => {
   // If product data exists, display it using the Product component
   return (
     <div>
-      <Product product={product} />
+      {product && (
+        <Product 
+          product={product} 
+          selectedSize={selectedSize} // Pass the selected size to Product
+          handleSizeChange={handleSizeChange} // Pass the handleSizeChange function to Product
+        />
+      )}
     </div>
   );
 };

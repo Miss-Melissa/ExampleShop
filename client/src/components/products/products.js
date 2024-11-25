@@ -19,8 +19,10 @@ const Products = ({ searchQuery }) => {
     price_min: 0,
     price_max: 1000,
   });
-
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+  // State for storing selected size for each product
+  const [selectedSizes, setSelectedSizes] = useState({});
 
   // Update the filters immediately on input change
   const handleFilterChange = (e) => {
@@ -68,8 +70,16 @@ const Products = ({ searchQuery }) => {
     fetchProducts(); // Fetch products when dependencies change
   }, [page, searchQuery, debouncedFilters, limit]);
 
-  const handleBuyClick = () => {
-    alert("Product added to cart!");
+  // Handle size change for a specific product
+  const handleSizeChange = (productId, size) => {
+    setSelectedSizes((prevSizes) => ({
+      ...prevSizes,
+      [productId]: size, // Update selected size for the specific product
+    }));
+  };
+
+  const handleBuyClick = (productId) => {
+    alert(`Product ${productId} added to cart!`);
   };
 
   // Pagination handler
@@ -93,21 +103,39 @@ const Products = ({ searchQuery }) => {
       <div>
         {products.length > 0 ? (
           products.map((product) => (
-            <div
-              key={
-                product._id || `${product.productName}-${product.productPrice}` // Use a fallback unique key if _id is missing
-              }
-            >
+            <div key={product._id || `${product.productName}-${product.productPrice}`}>
               <Link to={`/products/${product._id}`}>
                 <h3>{product.productName}</h3>
+                {/* Display the product image */}
                 <img
-                  src={product.productImage}
+                  src={`http://localhost:5000/uploads/${product.productImage}`} // Image path
                   alt={product.productName}
                   height={200}
                 />
                 <p>Price: ${product.productPrice}</p>
-                <BuyBtn onClick={handleBuyClick} />
               </Link>
+
+              {/* Dropdown for sizes if available */}
+              {product.productSize && product.productSize.length > 0 ? (
+                <div>
+                  <h4>Available Sizes:</h4>
+                  <select
+                    value={selectedSizes[product._id] || ""}
+                    onChange={(e) => handleSizeChange(product._id, e.target.value)} // Handling size change
+                  >
+                    <option value="">Select a size</option>
+                    {product.productSize.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <p>No sizes available</p> // Message if no sizes are available
+              )}
+                              <BuyBtn onClick={() => handleBuyClick(product._id)} />
+
             </div>
           ))
         ) : (
@@ -116,13 +144,13 @@ const Products = ({ searchQuery }) => {
 
         {/* Pagination Controls */}
         <div>
-          {page > 1 && ( // Only render the Previous button if the page is greater than 1
+          {page > 1 && (
             <button onClick={() => handlePageChange(page - 1)}>Previous Page</button>
           )}
           <span>
             Page {page} of {totalPages}
           </span>
-          {page < totalPages && ( // Only render the Next button if the page is less than the total pages
+          {page < totalPages && (
             <button onClick={() => handlePageChange(page + 1)}>Next Page</button>
           )}
         </div>
