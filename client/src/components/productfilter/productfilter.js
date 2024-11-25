@@ -1,27 +1,45 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 function ProductFilter({ filters, handleFilterChange }) {
+  const [filterOptions, setFilterOptions] = useState({
+    categories: [],
+    colors: [],
+    brands: [],
+    sizes: [],
+  });
+
+  useEffect(() => {
+    // Fetch the available filter options from the backend
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/products/filters');
+        setFilterOptions(response.data); // Assuming the response structure contains categories, colors, brands, and sizes
+      } catch (error) {
+        console.error("Error fetching filter options:", error);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []); // This will run once when the component mounts
+
   // Handle slider change for price range (min/max)
   const handleSliderChange = (e) => {
     const { name, value } = e.target;
 
     // Ensure price_min is never greater than price_max and not equal
     if (name === "price_min") {
-      // If price_min is greater than price_max, update price_min to price_max
       if (value >= filters.price_max) {
         handleFilterChange({ target: { name: "price_min", value: filters.price_max - 10 } });
       } else if (value === filters.price_max) {
-        // If price_min is equal to price_max, set it one step lower
         handleFilterChange({ target: { name: "price_min", value: value - 10 } });
       } else {
         handleFilterChange({ target: { name, value } });
       }
     } else if (name === "price_max") {
-      // If price_max is less than price_min, update price_max to price_min
       if (value <= filters.price_min) {
         handleFilterChange({ target: { name: "price_max", value: filters.price_min + 10 } });
       } else if (value === filters.price_min) {
-        // If price_max is equal to price_min, set it one step higher
         handleFilterChange({ target: { name: "price_max", value: value + 10 } });
       } else {
         handleFilterChange({ target: { name, value } });
@@ -31,46 +49,73 @@ function ProductFilter({ filters, handleFilterChange }) {
 
   return (
     <div>
-      {/* Other filters */}
-      <input
-        type="text"
+      {/* Category Filter */}
+      <select
         name="category"
         value={filters.category}
-        placeholder="Category"
         onChange={handleFilterChange}
-      />
+      >
+        <option value="">Select Category</option>
+        {filterOptions.categories.map((category, index) => (
+          <option key={index} value={category}>
+            {category}
+          </option>
+        ))}
+      </select>
 
-      <input
-        type="text"
+      {/* Color Filter */}
+      <select
         name="color"
         value={filters.color}
-        placeholder="Color"
         onChange={handleFilterChange}
-      />
+      >
+        <option value="">Select Color</option>
+        {filterOptions.colors.map((color, index) => (
+          <option key={index} value={color}>
+            {color}
+          </option>
+        ))}
+      </select>
 
-      <input
-        type="text"
+      {/* Brand Filter */}
+      <select
         name="brand"
         value={filters.brand}
-        placeholder="Brand"
         onChange={handleFilterChange}
-      />
+      >
+        <option value="">Select Brand</option>
+        {filterOptions.brands.map((brand, index) => (
+          <option key={index} value={brand}>
+            {brand}
+          </option>
+        ))}
+      </select>
 
-      <input
-        type="text"
+      {/* Gender Filter */}
+      <select
         name="gender"
         value={filters.gender}
-        placeholder="Gender"
         onChange={handleFilterChange}
-      />
+      >
+        <option value="">Select Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="unisex">Unisex</option>
+      </select>
 
-      <input
-        type="text"
+      {/* Size Filter */}
+      <select
         name="size"
         value={filters.size}
-        placeholder="Size (e.g., S,M,L)"
         onChange={handleFilterChange}
-      />
+      >
+        <option value="">Select Size</option>
+        {filterOptions.sizes.map((size, index) => (
+          <option key={index} value={size}>
+            {size}
+          </option>
+        ))}
+      </select>
 
       {/* Price Range Filter */}
       <div>
