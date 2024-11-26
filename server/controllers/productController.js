@@ -102,38 +102,52 @@ const createProduct = async (req, res) => {
             productGender,
         } = req.body;
 
+        console.log('Received fields:', req.body);
+        console.log('Received files:', req.files);
+
         // Validate required fields
         if (!productName || !productPrice || !productQuantity || !productCategory || !productBrand || !productColor || !productGender) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
+        // Handle product categories: Parse if it's not already an array
+        let parsedCategory = productCategory;
+        if (typeof productCategory === 'string') {
+            // If productCategory is a string (like a comma-separated string), split it into an array
+            parsedCategory = productCategory.split(',').map((item) => item.trim());
+        }
+
+        // Handle product images
         const productImages = req.files ? req.files.map((file) => file.filename) : [];
         if (!productImages.length) {
             return res.status(400).json({ message: 'At least one image is required' });
         }
 
+        // Handle product size
         const parsedSize = Array.isArray(productSize) ? productSize : JSON.parse(productSize);
 
+        // Create a new product document
         const newProduct = new Product({
             productName,
             productPrice,
             productDescription,
             productQuantity,
             productSize: parsedSize,
-            productCategory,
+            productCategory: parsedCategory, // Use parsed category array
             productBrand,
             productColor,
             productGender,
-            productImages,
+            productImages,  // Images saved in the 'uploads' directory
         });
 
         await newProduct.save();
         res.status(201).json(newProduct);
     } catch (err) {
-        console.error('Error creating product:', err.message);
-        res.status(500).json({ message: 'Error creating product' });
+        console.error('Error creating product:', err); // Log the full error
+        res.status(500).json({ message: 'Error creating product', error: err.message });
     }
 };
+
 
 // Function to update a product
 const updateProduct = async (req, res) => {

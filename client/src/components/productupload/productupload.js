@@ -83,78 +83,42 @@ const ProductUpload = () => {
     setProductImages(updatedImages);
     setImagePreviews(updatedPreviews);
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if (
-      !productName ||
-      !productCategories.length ||
-      !productPrice ||
-      !productDescription ||
-      !productQuantity ||
-      !productBrand ||
-      !productColor ||
-      !productGender ||
-      !productSize.length ||
-      !productImages.length
-    ) {
-      setLoading(false);
-      setError("All fields are required.");
-      return;
-    }
-
-    if (parseFloat(productPrice) <= 0 || parseInt(productQuantity, 10) <= 0) {
-      setLoading(false);
-      setError("Price and quantity must be greater than zero.");
-      return;
-    }
+  
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     const formData = new FormData();
-    formData.append("productName", productName);
-    formData.append("productCategories", JSON.stringify(productCategories));
-    formData.append("productPrice", parseFloat(productPrice));
-    formData.append("productDescription", productDescription);
-    formData.append("productQuantity", parseInt(productQuantity, 10));
-    formData.append("productSize", JSON.stringify(productSize));
-    formData.append("productGender", productGender);
-    formData.append("productBrand", productBrand);
-    formData.append("productColor", productColor);
+    formData.append('productName', productName);
+    formData.append('productPrice', productPrice);
+    formData.append('productDescription', productDescription);
+    formData.append('productQuantity', productQuantity);
+    formData.append('productSize', JSON.stringify(productSize));  // If it's an array, stringify it
+    formData.append('productGender', productGender);
+    formData.append('productBrand', productBrand);
+    formData.append('productColor', productColor);
 
-    productImages.forEach((image) => {
-      if (image) {
-        formData.append("productImages", image);
-      }
+    // Handle multiple categories
+    formData.append('productCategory', productCategories.join(','));  // Join array as a comma-separated string
+
+    // Append each file image (assuming productImages is an array of files)
+    productImages.forEach((imageFile) => {
+        formData.append('productImages', imageFile);  // Append each file to 'productImages'
     });
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/products",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      console.log("Product uploaded successfully:", response.data);
-      // Reset form fields after successful upload
-      setProductName("");
-      setProductCategories([]);
-      setProductPrice("");
-      setProductDescription("");
-      setProductQuantity("");
-      setProductSize([]);
-      setProductGender("");
-      setProductBrand("");
-      setProductColor("");
-      setProductImages([]);
-      setImagePreviews([]);
-      setLoading(false);
+        // Send the form data to your server
+        const response = await axios.post("http://localhost:5000/products", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",  // Ensure it's set to multipart/form-data
+            },
+        });
+        console.log("Product uploaded successfully:", response.data);
     } catch (err) {
-      console.error("Error uploading product:", err);
-      setError(err.response?.data?.message || "Error uploading product.");
-      setLoading(false);
+        console.error("Error uploading product:", err.response?.data || err.message);
     }
-  };
+};
+
+  
 
   return (
     <div>
@@ -187,7 +151,10 @@ const ProductUpload = () => {
             {productCategories.map((category, index) => (
               <li key={index}>
                 {category}{" "}
-                <button type="button" onClick={() => handleRemoveCategory(category)}>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCategory(category)}
+                >
                   Remove
                 </button>
               </li>
