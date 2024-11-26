@@ -8,24 +8,24 @@ const ProductUpdatePage = () => {
 
   const [formData, setFormData] = useState({
     productName: '',
-    productCategory: [], // Ensure productCategory is an array
+    productCategory: [],
     productColor: '',
     productBrand: '',
     productGender: '',
-    productSize: [], // Ensuring productSize is an array
+    productSize: [],
     productPrice: '',
     productDescription: '',
-    productImages: [], // Added images array to store images fetched from the backend
+    productImages: [], // Hantera existerande bilder
   });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newSize, setNewSize] = useState('');
-  const [newCategory, setNewCategory] = useState(''); // State for new category
-  const [newImages, setNewImages] = useState([]); // For storing new images
-  const [deletedImages, setDeletedImages] = useState([]); // For storing deleted images
+  const [newCategory, setNewCategory] = useState('');
+  const [newImages, setNewImages] = useState([]); // För nya uppladdade bilder
+  const [deletedImages, setDeletedImages] = useState([]); // För bilder som ska tas bort
 
-  // Fetch product data when the component is mounted
+  // Hämtar produktdata när komponenten laddas
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -63,109 +63,57 @@ const ProductUpdatePage = () => {
     fetchProductData();
   }, [id]);
 
-  // Handle input changes for text fields
+  // Hantera ändring av textfält
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle adding a new category
-  const handleAddCategory = () => {
-    if (newCategory && !formData.productCategory.includes(newCategory)) {
-      setFormData((prev) => ({
-        ...prev,
-        productCategory: [...prev.productCategory, newCategory],
-      }));
-      setNewCategory(''); // Clear the input field after adding
-    }
-  };
-
-  // Handle removing a category
-  const handleRemoveCategory = (category) => {
-    setFormData((prev) => ({
-      ...prev,
-      productCategory: prev.productCategory.filter((cat) => cat !== category),
-    }));
-  };
-
-  // Handle adding a new size
-  const handleAddSize = () => {
-    if (newSize && !formData.productSize.includes(newSize)) {
-      setFormData((prev) => ({
-        ...prev,
-        productSize: [...prev.productSize, newSize],
-      }));
-      setNewSize('');
-    }
-  };
-
-  // Handle removing a size
-  const handleRemoveSize = (size) => {
-    setFormData((prev) => ({
-      ...prev,
-      productSize: prev.productSize.filter((s) => s !== size),
-    }));
-  };
-
-  // Handle image changes (for new images)
+  // Hantera uppladdning av flera bilder
   const handleImageChange = (e) => {
-    setNewImages(e.target.files);
+    const files = Array.from(e.target.files); // Gör om FileList till en array
+    setNewImages((prev) => [...prev, ...files]); // Lägg till nya bilder till newImages-arrayen
   };
 
-  // Handle image removal (mark for deletion)
+  // Ta bort bild
   const handleRemoveImage = (image) => {
-    setDeletedImages((prev) => [...prev, image]);
-    setFormData((prev) => ({
-      ...prev,
-      productImages: prev.productImages.filter((img) => img !== image),
-    }));
+    // Om bilden är en ny bild (inte en URL), ta bort från newImages
+    if (newImages.includes(image)) {
+      setNewImages(newImages.filter((img) => img !== image));
+    }
+    // Om bilden är en gammal bild (en URL), ta bort från formData.productImages
+    else {
+      setFormData((prev) => ({
+        ...prev,
+        productImages: prev.productImages.filter((img) => img !== image),
+      }));
+      setDeletedImages((prev) => [...prev, image]); // Markera för borttagning
+    }
   };
 
-// Ensure `productCategory` and `productSize` are arrays before submission
-const handleSubmit = async (e) => {
+  // Skicka data vid uppdatering
+  const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     const data = new FormData();
     data.append('productName', formData.productName);
-  
-    // Ensure productCategory is an array
-    let productCategory = formData.productCategory;
-    if (typeof productCategory === 'string') {
-      try {
-        productCategory = JSON.parse(productCategory); // Parse the string into an actual array
-      } catch (err) {
-        console.error('Error parsing productCategory:', err);
-        return; // Exit if parsing fails
-      }
-    }
-  
-    // Ensure productSize is also an array
-    let productSize = formData.productSize;
-    if (typeof productSize === 'string') {
-      try {
-        productSize = JSON.parse(productSize); // Parse the string into an actual array
-      } catch (err) {
-        console.error('Error parsing productSize:', err);
-        return; // Exit if parsing fails
-      }
-    }
-  
-    // Append the parsed arrays to FormData
-    data.append('productCategory', JSON.stringify(productCategory)); // Send as JSON string to preserve array structure
-    data.append('productSize', JSON.stringify(productSize)); // Send as JSON string to preserve array structure
-  
-    // Other fields
+    data.append('productCategory', JSON.stringify(formData.productCategory));
+    data.append('productSize', JSON.stringify(formData.productSize));
     data.append('productColor', formData.productColor);
     data.append('productBrand', formData.productBrand);
     data.append('productGender', formData.productGender);
     data.append('productPrice', formData.productPrice);
     data.append('productDescription', formData.productDescription);
-  
-    // Handle images
-    for (let i = 0; i < newImages.length; i++) {
-      data.append('productImages', newImages[i]);
-    }
-  
+
+    // Lägg till alla bilder (gamla + nya bilder)
+    const finalProductImages = [...formData.productImages, ...newImages];
+    finalProductImages.forEach((image) => {
+      data.append('productImages', image);
+    });
+
+    // Lägg till bilder som ska tas bort
+    data.append('deletedImages', JSON.stringify(deletedImages));
+
     try {
       const response = await axios.put(`http://localhost:5000/products/${id}`, data, {
         headers: {
@@ -179,12 +127,8 @@ const handleSubmit = async (e) => {
       setError(err.response?.data?.message || 'Failed to update product');
     }
   };
-  
-  
-  
-  
 
-  // Loading and error handling
+  // Visa laddnings- eller felmeddelande
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -212,13 +156,24 @@ const handleSubmit = async (e) => {
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
             />
-            <button type="button" onClick={handleAddCategory}>Add Category</button>
+            <button type="button" onClick={() => {
+              if (newCategory && !formData.productCategory.includes(newCategory)) {
+                setFormData((prev) => ({
+                  ...prev,
+                  productCategory: [...prev.productCategory, newCategory],
+                }));
+                setNewCategory('');
+              }
+            }}>Add Category</button>
           </div>
           <ul>
             {formData.productCategory.map((category, index) => (
               <li key={index}>
                 {category}{' '}
-                <button type="button" onClick={() => handleRemoveCategory(category)}>Remove</button>
+                <button type="button" onClick={() => setFormData((prev) => ({
+                  ...prev,
+                  productCategory: prev.productCategory.filter((cat) => cat !== category),
+                }))}>Remove</button>
               </li>
             ))}
           </ul>
@@ -263,19 +218,28 @@ const handleSubmit = async (e) => {
         {/* Product Sizes */}
         <div>
           <label>Product Sizes:</label>
-          <div>
-            <input
-              type="text"
-              value={newSize}
-              onChange={(e) => setNewSize(e.target.value)}
-            />
-            <button type="button" onClick={handleAddSize}>Add Size</button>
-          </div>
+          <input
+            type="text"
+            value={newSize}
+            onChange={(e) => setNewSize(e.target.value)}
+          />
+          <button type="button" onClick={() => {
+            if (newSize && !formData.productSize.includes(newSize)) {
+              setFormData((prev) => ({
+                ...prev,
+                productSize: [...prev.productSize, newSize],
+              }));
+              setNewSize('');
+            }
+          }}>Add Size</button>
           <ul>
             {formData.productSize.map((size, index) => (
               <li key={index}>
                 {size}{' '}
-                <button type="button" onClick={() => handleRemoveSize(size)}>Remove</button>
+                <button type="button" onClick={() => setFormData((prev) => ({
+                  ...prev,
+                  productSize: prev.productSize.filter((s) => s !== size),
+                }))}>Remove</button>
               </li>
             ))}
           </ul>
@@ -302,32 +266,37 @@ const handleSubmit = async (e) => {
           />
         </div>
 
-        {/* Product Images */}
+        {/* Image Upload */}
         <div>
-          <label>Product Images:</label>
+          <label>Upload Images:</label>
           <input
             type="file"
             multiple
             onChange={handleImageChange}
           />
-          <div>
-            {formData.productImages && formData.productImages.length > 0 && (
-              <ul>
-                {formData.productImages.map((image, index) => (
-                  <li key={index}>
-                    <img src={image} alt={`product-image-${index}`} width={100} />
-                    <button type="button" onClick={() => handleRemoveImage(image)}>Remove</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
 
-        {/* Submit */}
         <div>
-          <button type="submit">Update Product</button>
+          <h4>Existing Images:</h4>
+          {formData.productImages.map((image, index) => (
+            <div key={index}>
+              <img src={image} alt={`Product Image ${index + 1}`} width={100} />
+              <button type="button" onClick={() => handleRemoveImage(image)}>Remove</button>
+            </div>
+          ))}
         </div>
+
+        <div>
+          <h4>New Images:</h4>
+          {newImages.map((image, index) => (
+            <div key={index}>
+              <img src={URL.createObjectURL(image)} alt={`New Image ${index + 1}`} width={100} />
+              <button type="button" onClick={() => handleRemoveImage(image)}>Remove</button>
+            </div>
+          ))}
+        </div>
+
+        <button type="submit">Update Product</button>
       </form>
     </div>
   );
