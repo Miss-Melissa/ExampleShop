@@ -63,8 +63,12 @@ const ProductUpload = () => {
   };
 
   const handleRemoveImage = (index) => {
-    setProductImages(productImages.filter((_, idx) => idx !== index));
-    setImagePreviews(imagePreviews.filter((_, idx) => idx !== index));
+    const updatedImages = [...productImages];
+    const updatedPreviews = [...imagePreviews];
+    updatedImages.splice(index, 1); // Remove image at index
+    updatedPreviews.splice(index, 1); // Remove preview at index
+    setProductImages(updatedImages);
+    setImagePreviews(updatedPreviews);
   };
 
   const handleSubmit = async (e) => {

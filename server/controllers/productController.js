@@ -148,6 +148,7 @@ const updateProduct = async (req, res) => {
       productBrand,
       productColor,
       productGender,
+      deletedImages = [],  // Destructure `deletedImages` from the request body (default to empty array if not provided)
     } = req.body;
   
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -155,21 +156,24 @@ const updateProduct = async (req, res) => {
     }
   
     try {
-      // Ensure productCategory is parsed as an array
+      // Parse productCategory and productSize as arrays if not already
       const parsedCategory = Array.isArray(productCategory) ? productCategory : JSON.parse(productCategory || '[]');
       const parsedSize = Array.isArray(productSize) ? productSize : JSON.parse(productSize || '[]');
   
+      // Retrieve the existing product from the database
       const existingProduct = await Product.findById(id);
       if (!existingProduct) {
         return res.status(404).json({ message: 'Product not found' });
       }
   
-      // Handle uploaded images
+      // Handle uploaded images (new images)
       const newImages = req.files ? req.files.map((file) => file.filename) : [];
-      const updatedImages = [
-        ...existingProduct.productImages, // Retain old images
-        ...newImages,                    // Add new images
-      ];
+  
+      // Filter out the deleted images from the existing images array
+      const updatedImages = existingProduct.productImages.filter(image => !deletedImages.includes(image));
+  
+      // Add new images to the remaining images
+      const finalImages = [...updatedImages, ...newImages];
   
       // Update product in the database
       const updatedProduct = await Product.findByIdAndUpdate(
@@ -180,13 +184,13 @@ const updateProduct = async (req, res) => {
           productColor,
           productBrand,
           productGender,
-          productSize: parsedSize,         // Ensure size is an array
+          productSize: parsedSize,  // Ensure size is an array
           productPrice,
           productDescription,
           productQuantity,
-          productImages: updatedImages,
+          productImages: finalImages,  // Set updated images
         },
-        { new: true }
+        { new: true }  // Ensure we return the updated document
       );
   
       res.status(200).json(updatedProduct);
