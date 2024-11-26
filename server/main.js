@@ -19,11 +19,10 @@ if (!process.env.PORT) {
   process.exit(1);
 }
 
-// Connect to MongoDB
 connectDB();
 
 // Middleware
-app.use(cors({ origin: '*' }));  // Allows all origins (for development purposes)
+app.use(cors());  // Allows all origins (for development purposes)
 app.use(express.json());  // For parsing JSON requests
 
 // Serve static files (image uploads)

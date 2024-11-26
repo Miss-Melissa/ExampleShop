@@ -13,12 +13,15 @@ function ProductFilter({ filters, handleFilterChange }) {
     // Fetch the available filter options from the backend
     const fetchFilterOptions = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/products/filters');
-        setFilterOptions(response.data); // Assuming the response structure contains categories, colors, brands, and sizes
+          const response = await axios.get('http://localhost:5000/products/filters');
+          setFilterOptions(response.data); // Assuming the response structure contains categories, colors, brands, and sizes
       } catch (error) {
-        console.error("Error fetching filter options:", error);
+          console.error("Error fetching filter options:", error);
+          if (error.response) {
+              console.error("Response Error:", error.response.data); // Detailed error response from server
+          }
       }
-    };
+  };
 
     fetchFilterOptions();
   }, []); // This will run once when the component mounts

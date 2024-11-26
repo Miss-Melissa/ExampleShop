@@ -1,5 +1,7 @@
 const Product = require('../models/productModel');
 const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
 
 // Function to fetch distinct filter options from the database
 const getProductFilter = async (req, res) => {
@@ -8,6 +10,7 @@ const getProductFilter = async (req, res) => {
         const colors = await Product.distinct('productColor');
         const brands = await Product.distinct('productBrand');
         const sizes = await Product.distinct('productSize');
+        
         res.json({ categories, colors, brands, sizes });
     } catch (err) {
         console.error('Error fetching filter options:', err.message);
@@ -30,10 +33,9 @@ const getProducts = async (req, res) => {
         limit = 10
     } = req.query;
 
-    // Parsing page and limit to ensure they are integers
-    const parsedPage = parseInt(page, 10) || 1;
-    const parsedLimit = parseInt(limit, 10) || 10;
-
+    // Ensure valid values
+    const parsedPage = Math.max(1, parseInt(page, 10));  // Default to 1 if invalid
+    const parsedLimit = Math.max(1, parseInt(limit, 10));  // Default to 10 if invalid
     const minPrice = price_min ? parseFloat(price_min) : undefined;
     const maxPrice = price_max ? parseFloat(price_max) : undefined;
 
@@ -58,12 +60,12 @@ const getProducts = async (req, res) => {
         }
 
         const totalProducts = await Product.countDocuments(searchCriteria);
-
         const products = await Product.find(searchCriteria)
             .skip((parsedPage - 1) * parsedLimit)
             .limit(parsedLimit);
 
         if (!products.length) {
+            console.log('No products found with filters:', searchCriteria);
             return res.status(404).json({ message: 'No products found matching the criteria' });
         }
 
@@ -106,7 +108,6 @@ const getProductById = async (req, res) => {
 // Function to create a new product
 const createProduct = async (req, res) => {
     try {
-        // Destructure form data from request body
         const { 
             productName, 
             productPrice, 
@@ -119,34 +120,29 @@ const createProduct = async (req, res) => {
             productGender 
         } = req.body;
 
-        // Get the uploaded files' filenames from the request
-        const productImages = req.files ? req.files.map(file => file.filename) : []; // If files are uploaded, extract filenames
+        const productImages = req.files ? req.files.map(file => file.filename) : [];
 
-        // Validate required fields
         if (!productName || !productPrice || !productQuantity || productImages.length === 0 || !productSize || !productCategory || !productBrand || !productColor || !productGender) {
             return res.status(400).json({ message: 'All fields are required, including at least one image' });
         }
 
-        // Ensure productSize is an array
         const parsedSize = Array.isArray(JSON.parse(productSize)) ? JSON.parse(productSize) : [];
 
-        // Create a new product with the provided data
         const newProduct = new Product({
             productName,
             productPrice,
             productDescription,
             productQuantity,
-            productSize: parsedSize, // Ensure it's an array
+            productSize: parsedSize,
             productCategory,
             productBrand,
             productColor,
             productGender,
-            productImages // Save the array of uploaded file names
+            productImages
         });
 
-        // Save the product to the database
         await newProduct.save();
-        return res.status(201).json(newProduct); // Return the created product
+        return res.status(201).json(newProduct);
 
     } catch (error) {
         console.error('Error creating product:', error);
@@ -154,49 +150,52 @@ const createProduct = async (req, res) => {
     }
 };
 
-// Function to update a product with multiple image uploads
+// Function to update a product
 const updateProduct = async (req, res) => {
-    const { id } = req.params;
-    const {
-        productName,
-        productCategory,
-        productColor,
-        productBrand,
-        productGender,
-        productSize,
-        productPrice,
-        productDescription
-    } = req.body;
-
-    // Get the uploaded files' filenames from the request
-    const productImages = req.files ? req.files.map(file => file.filename) : []; // Extract filenames from uploaded files
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-        console.log('Invalid or missing product ID:', id);
-        return res.status(400).json({ message: 'Invalid product ID format' });
-    }
-
     try {
-        const updatedProduct = await Product.findByIdAndUpdate(id, {
-            productName,
-            productCategory,
-            productColor,
-            productBrand,
-            productGender,
-            productSize,
-            productPrice,
-            productDescription,
-            ...(productImages.length > 0 && { productImages }) // Only update productImages if new files are uploaded
-        }, { new: true });
+        const productId = req.params.id;
+        const { productName, productCategory, productColor, productBrand, productGender, productSize, productPrice, productDescription } = req.body;
+
+        const productImages = req.files ? req.files.map(file => file.filename) : [];
+        const deletedImages = req.body.deletedImages ? JSON.parse(req.body.deletedImages) : [];
+
+        deletedImages.forEach((image) => {
+            const imagePath = path.join(__dirname, '../uploads', image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlink(imagePath, (err) => {
+                    if (err) {
+                        console.error(`Failed to delete image: ${image}`, err);
+                    } else {
+                        console.log(`Image deleted: ${image}`);
+                    }
+                });
+            }
+        });
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            productId,
+            {
+                productName,
+                productCategory,
+                productColor,
+                productBrand,
+                productGender,
+                productSize,
+                productPrice,
+                productDescription,
+                productImages: [...productImages],
+            },
+            { new: true }
+        );
 
         if (!updatedProduct) {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        res.json(updatedProduct);
-    } catch (err) {
-        console.error('Error updating product:', err.message);
-        res.status(500).json({ message: 'Server error while updating product' });
+        res.status(200).json(updatedProduct);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to update product', error: error.message });
     }
 };
 

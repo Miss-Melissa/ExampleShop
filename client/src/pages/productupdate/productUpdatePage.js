@@ -6,9 +6,9 @@ function ProductUpdatePage() {
   const { id } = useParams(); // Get the product ID from the URL params
   const navigate = useNavigate();
 
-  // State to manage the product data, including images and form fields
   const [product, setProduct] = useState(null);
-  const [newImages, setNewImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);  // For new image uploads
+  const [deletedImages, setDeletedImages] = useState([]);  // For images to be deleted
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -16,14 +16,13 @@ function ProductUpdatePage() {
     productCategory: '',
     productColor: '',
     productBrand: '',
-    productGender: 'Women',
-    productSize: [], // This will hold the array of sizes
+    productGender: '',
+    productSize: [],  
     productPrice: 0,
     productDescription: '',
   });
 
-  // State to manage the new size input
-  const [newSize, setNewSize] = useState('');
+  const [newSize, setNewSize] = useState(''); // For adding new size
 
   // Fetch product data when component mounts
   useEffect(() => {
@@ -82,16 +81,24 @@ function ProductUpdatePage() {
     }));
   };
 
-  // Handle image input changes
+  // Handle image input changes (for new images)
   const handleImageChange = (e) => {
-    setNewImages(e.target.files);
+    setNewImages(e.target.files);  // Store new images
+  };
+
+  // Handle removing an image (mark for deletion)
+  const handleRemoveImage = (image) => {
+    setDeletedImages((prev) => [...prev, image]);  // Add image to deleted list
+    setProduct((prev) => ({
+      ...prev,
+      productImages: prev.productImages.filter((img) => img !== image),  // Remove image from UI
+    }));
   };
 
   // Submit the form to update the product
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Prepare the form data for submission, including the new images
     const data = new FormData();
     data.append('productName', formData.productName);
     data.append('productCategory', formData.productCategory);
@@ -102,10 +109,13 @@ function ProductUpdatePage() {
     data.append('productPrice', formData.productPrice);
     data.append('productDescription', formData.productDescription);
 
-    // Add new images to the form data
+    // Append new images to the form data
     for (let i = 0; i < newImages.length; i++) {
       data.append('productImages', newImages[i]);
     }
+
+    // Send the deleted images list
+    data.append('deletedImages', JSON.stringify(deletedImages));
 
     try {
       const response = await axios.put(`http://localhost:5000/products/${id}`, data, {
@@ -114,7 +124,7 @@ function ProductUpdatePage() {
         },
       });
       alert('Product updated successfully');
-      navigate('/products');
+      navigate('/products');  // Redirect to product list after update
     } catch (err) {
       console.error('Error updating product:', err);
       setError('Failed to update product');
@@ -128,6 +138,7 @@ function ProductUpdatePage() {
       <h1>Update Product</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
+        {/* Product Name */}
         <div>
           <label>Product Name</label>
           <input
@@ -137,8 +148,10 @@ function ProductUpdatePage() {
             onChange={handleInputChange}
           />
         </div>
+
+        {/* Product Category */}
         <div>
-          <label>Product Category</label>
+          <label>Category</label>
           <input
             type="text"
             name="productCategory"
@@ -146,8 +159,10 @@ function ProductUpdatePage() {
             onChange={handleInputChange}
           />
         </div>
+
+        {/* Product Color */}
         <div>
-          <label>Product Color</label>
+          <label>Color</label>
           <input
             type="text"
             name="productColor"
@@ -155,8 +170,10 @@ function ProductUpdatePage() {
             onChange={handleInputChange}
           />
         </div>
+
+        {/* Product Brand */}
         <div>
-          <label>Product Brand</label>
+          <label>Brand</label>
           <input
             type="text"
             name="productBrand"
@@ -164,8 +181,10 @@ function ProductUpdatePage() {
             onChange={handleInputChange}
           />
         </div>
+
+        {/* Product Gender */}
         <div>
-          <label>Product Gender</label>
+          <label>Gender</label>
           <select
             name="productGender"
             value={formData.productGender}
@@ -176,77 +195,69 @@ function ProductUpdatePage() {
             <option value="Unisex">Unisex</option>
           </select>
         </div>
+
+        {/* Product Size */}
         <div>
           <label>Product Size</label>
-          <div>
-            <input
-              type="text"
-              value={newSize}
-              onChange={handleSizeInputChange}
-              placeholder="Enter size (e.g., s, m, l)"
-            />
-            <button type="button" onClick={handleAddSize}>
-              Add Size
-            </button>
-          </div>
-          <div>
-            <h4>Current Sizes</h4>
-            {formData.productSize.length > 0 ? (
-              formData.productSize.map((size) => (
-                <span key={size}>
-                  {size}
-                  <button type="button" onClick={() => handleRemoveSize(size)}>
-                    Remove
-                  </button>
-                </span>
-              ))
-            ) : (
-              <p>No sizes added</p>
-            )}
-          </div>
-        </div>
-        <div>
-          <label>Product Price</label>
           <input
-            type="number"
-            name="productPrice"
-            value={formData.productPrice}
-            onChange={handleInputChange}
+            type="text"
+            value={newSize}
+            onChange={handleSizeInputChange}
+            placeholder="Enter size (e.g., s, m, l)"
           />
+          <button type="button" onClick={handleAddSize}>
+            Add Size
+          </button>
         </div>
+
+        {/* Sizes list */}
         <div>
-          <label>Product Description</label>
-          <textarea
-            name="productDescription"
-            value={formData.productDescription}
-            onChange={handleInputChange}
-          />
+          <h4>Current Sizes</h4>
+          {formData.productSize.length > 0 ? (
+            formData.productSize.map((size) => (
+              <span key={size}>
+                {size}
+                <button type="button" onClick={() => handleRemoveSize(size)}>
+                  Remove
+                </button>
+              </span>
+            ))
+          ) : (
+            <p>No sizes added</p>
+          )}
         </div>
+
+        {/* Upload New Images */}
         <div>
-          <label>Product Images</label>
+          <label>Upload New Images</label>
           <input
             type="file"
             multiple
             onChange={handleImageChange}
           />
         </div>
+
+        {/* Existing images */}
+        <h3>Current Images</h3>
+        <div>
+          {product.productImages.map((image, index) => (
+            <div key={index}>
+              <img
+                src={`http://localhost:5000/uploads/${image}`}
+                alt={`Product Image ${index + 1}`}
+                width="100"
+                height="100"
+              />
+              <button onClick={() => handleRemoveImage(image)}>Delete</button>
+            </div>
+          ))}
+        </div>
+
+        {/* Submit Button */}
         <div>
           <button type="submit">Update Product</button>
         </div>
       </form>
-
-      <h3>Current Images</h3>
-      <div>
-        {product.productImages.map((image, index) => (
-          <img
-            key={index}
-            src={`http://localhost:5000/uploads/${image}`}
-            alt={`Product Image ${index + 1}`}
-            width="100"
-            height="100"
-          />
-        ))}
-      </div>
     </div>
   );
 }

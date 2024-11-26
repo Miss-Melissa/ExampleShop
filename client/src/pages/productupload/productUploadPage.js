@@ -60,7 +60,7 @@ const ProductUploadPage = () => {
         <table border="1" cellPadding="10">
           <thead>
             <tr>
-              <th>Photos</th> {/* Column for product photos */}
+              <th>Photos</th>
               <th>Name</th>
               <th>Price</th>
               <th>Actions</th>
@@ -69,17 +69,15 @@ const ProductUploadPage = () => {
           <tbody>
             {products.map((product) => (
               <tr key={product._id}>
-                {/* Display product images */}
                 <td>
                   {product.productImages && product.productImages.length > 0 ? (
                     <div>
-                      {/* Map through all product images and display them */}
                       {product.productImages.map((image, index) => (
                         <img
                           key={index}
                           src={`http://localhost:5000/uploads/${image}`}
                           alt={`${product.productName} image ${index + 1}`}
-                          height={100} // You can adjust the size of the image
+                          height={100}
                           style={{ margin: "10px" }}
                         />
                       ))}
@@ -91,9 +89,7 @@ const ProductUploadPage = () => {
                 <td>{product.productName}</td>
                 <td>${Number(product.productPrice).toFixed(2)}</td>
                 <td>
-                  <button onClick={() => handleUpdate(product._id)}>
-                    Update
-                  </button>
+                  <button onClick={() => handleUpdate(product._id)}>Update</button>
                   <button
                     style={{ marginLeft: "10px" }}
                     onClick={() => handleDelete(product._id)}
