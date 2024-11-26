@@ -148,7 +148,7 @@ const updateProduct = async (req, res) => {
       productBrand,
       productColor,
       productGender,
-      deletedImages = [],  // Destructure `deletedImages` from the request body (default to empty array if not provided)
+      deletedImages = [],  
     } = req.body;
   
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -180,17 +180,17 @@ const updateProduct = async (req, res) => {
         id,
         {
           productName,
-          productCategory: parsedCategory,  // Ensure category is an array
+          productCategory: parsedCategory,  
           productColor,
           productBrand,
           productGender,
-          productSize: parsedSize,  // Ensure size is an array
+          productSize: parsedSize,  
           productPrice,
           productDescription,
           productQuantity,
-          productImages: finalImages,  // Set updated images
+          productImages: finalImages,  
         },
-        { new: true }  // Ensure we return the updated document
+        { new: true } 
       );
   
       res.status(200).json(updatedProduct);
