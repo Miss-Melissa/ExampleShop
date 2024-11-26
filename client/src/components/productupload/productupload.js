@@ -17,52 +17,35 @@ const ProductUpload = () => {
   const [error, setError] = useState("");
   const [sizeInput, setSizeInput] = useState("");
 
-  // Handle input changes for various fields
   const handleInputChange = (e, index) => {
     const { name, value, files } = e.target;
 
     if (name === "productImages") {
-      const newProductImages = [...productImages];
-      const newImagePreviews = [...imagePreviews];
-      newProductImages[index] = files[0];
-      newImagePreviews[index] = URL.createObjectURL(files[0]);
-      setProductImages(newProductImages);
-      setImagePreviews(newImagePreviews);
+      const updatedImages = [...productImages];
+      const updatedPreviews = [...imagePreviews];
+      updatedImages[index] = files[0];
+      updatedPreviews[index] = URL.createObjectURL(files[0]);
+      setProductImages(updatedImages);
+      setImagePreviews(updatedPreviews);
     } else if (name === "sizeInput") {
       setSizeInput(value);
     } else {
-      switch (name) {
-        case "productName":
-          setProductName(value);
-          break;
-        case "productCategory":
-          setProductCategory(value);
-          break;
-        case "productPrice":
-          setProductPrice(value);
-          break;
-        case "productDescription":
-          setProductDescription(value);
-          break;
-        case "productQuantity":
-          setProductQuantity(value);
-          break;
-        case "productGender":
-          setProductGender(value);
-          break;
-        case "productBrand":
-          setProductBrand(value);
-          break;
-        case "productColor":
-          setProductColor(value);
-          break;
-        default:
-          break;
+      const stateMap = {
+        productName: setProductName,
+        productCategory: setProductCategory,
+        productPrice: setProductPrice,
+        productDescription: setProductDescription,
+        productQuantity: setProductQuantity,
+        productGender: setProductGender,
+        productBrand: setProductBrand,
+        productColor: setProductColor,
+      };
+      if (stateMap[name]) {
+        stateMap[name](value);
       }
     }
   };
 
-  // Add size to the product size array
   const handleAddSize = () => {
     if (sizeInput && !productSize.includes(sizeInput)) {
       setProductSize([...productSize, sizeInput]);
@@ -70,30 +53,25 @@ const ProductUpload = () => {
     }
   };
 
-  // Remove a size from the size array
   const handleRemoveSize = (size) => {
     setProductSize(productSize.filter((item) => item !== size));
   };
 
-  // Add new image input field
   const handleAddImage = () => {
     setProductImages([...productImages, null]);
     setImagePreviews([...imagePreviews, ""]);
   };
 
-  // Remove image input field
   const handleRemoveImage = (index) => {
     setProductImages(productImages.filter((_, idx) => idx !== index));
     setImagePreviews(imagePreviews.filter((_, idx) => idx !== index));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(""); // Reset error before submission
+    setError("");
 
-    // Validate that the necessary fields are filled in
     if (
       !productName ||
       !productCategory ||
@@ -104,56 +82,44 @@ const ProductUpload = () => {
       !productColor ||
       !productGender ||
       !productSize.length ||
-      !productImages.length // Check that there are images selected
+      !productImages.length
     ) {
       setLoading(false);
       setError("All fields are required.");
       return;
     }
 
-    if (parseFloat(productPrice) <= 0 || parseInt(productQuantity) <= 0) {
+    if (parseFloat(productPrice) <= 0 || parseInt(productQuantity, 10) <= 0) {
       setLoading(false);
       setError("Price and quantity must be greater than zero.");
       return;
     }
 
-    // Create FormData to send to the backend
     const formData = new FormData();
     formData.append("productName", productName);
     formData.append("productCategory", productCategory);
-    formData.append("productPrice", parseFloat(productPrice)); // Ensure price is a number
+    formData.append("productPrice", parseFloat(productPrice));
     formData.append("productDescription", productDescription);
-    formData.append("productQuantity", parseInt(productQuantity)); // Ensure quantity is a number
-    formData.append("productSize", JSON.stringify(productSize)); // Convert array to string for storage
+    formData.append("productQuantity", parseInt(productQuantity, 10));
+    formData.append("productSize", JSON.stringify(productSize));
     formData.append("productGender", productGender);
-    formData.append("productBrand", productBrand); // Append productBrand
-    formData.append("productColor", productColor); // Append productColor
+    formData.append("productBrand", productBrand);
+    formData.append("productColor", productColor);
 
-    // Log the formData to see its content
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]); // This will log each key-value pair in the FormData
-    }
-
-    // Append multiple images to FormData
     productImages.forEach((image) => {
       if (image) {
-        formData.append("productImages", image); // Append each image
+        formData.append("productImages", image);
       }
     });
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/products",  // Ensure this URL is correct
+        "http://localhost:5000/products",
         formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data", // Important for file uploads
-          },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       console.log("Product uploaded successfully:", response.data);
 
-      // Reset form after successful upload
       setProductName("");
       setProductCategory("");
       setProductPrice("");
@@ -161,23 +127,17 @@ const ProductUpload = () => {
       setProductQuantity("");
       setProductSize([]);
       setProductGender("");
-      setProductBrand(""); // Reset productBrand
-      setProductColor(""); // Reset productColor
-      setProductImages([]); // Reset images
-      setImagePreviews([]); // Reset image previews
+      setProductBrand("");
+      setProductColor("");
+      setProductImages([]);
+      setImagePreviews([]);
       setLoading(false);
     } catch (err) {
       console.error("Error uploading product:", err);
-      if (err.response) {
-        console.error("Response data:", err.response.data); // Log the error response from the server
-        setError(`Error uploading product: ${err.response.data.message || err.response.data}`);
-      } else {
-        setError("Error uploading product.");
-      }
+      setError(err.response?.data?.message || "Error uploading product.");
       setLoading(false);
     }
-};
-
+  };
 
   return (
     <div>
@@ -238,22 +198,16 @@ const ProductUpload = () => {
         </div>
         <div>
           <label>Sizes:</label>
-          <div>
-            <input
-              type="text"
-              name="sizeInput"
-              value={sizeInput}
-              onChange={handleInputChange}
-              placeholder="Enter size (e.g. S, M, L)"
-            />
-            <button
-              type="button"
-              onClick={handleAddSize}
-              disabled={!sizeInput}
-            >
-              Add Size
-            </button>
-          </div>
+          <input
+            type="text"
+            name="sizeInput"
+            value={sizeInput}
+            onChange={handleInputChange}
+            placeholder="Enter size (e.g., S, M, L)"
+          />
+          <button type="button" onClick={handleAddSize}>
+            Add Size
+          </button>
           <ul>
             {productSize.map((size, index) => (
               <li key={index}>
@@ -273,7 +227,7 @@ const ProductUpload = () => {
             onChange={handleInputChange}
             required
           >
-            <option value="select">Select</option>
+            <option value="">Select</option>
             <option value="Men">Men</option>
             <option value="Women">Women</option>
             <option value="Unisex">Unisex</option>
@@ -299,7 +253,6 @@ const ProductUpload = () => {
             required
           />
         </div>
-
         <div>
           <label>Product Images:</label>
           {productImages.map((_, index) => (
@@ -311,20 +264,14 @@ const ProductUpload = () => {
                 accept="image/*"
               />
               {imagePreviews[index] && (
-                <div>
-                  <img
-                    src={imagePreviews[index]}
-                    alt={`Preview ${index + 1}`} // Removed "image" from alt text
-                    style={{ width: "100px", height: "auto" }}
-                  />
-                </div>
+                <img
+                  src={imagePreviews[index]}
+                  alt={`Preview ${index + 1}`}
+                  style={{ width: "100px", height: "auto" }}
+                />
               )}
-              <button
-                type="button"
-                onClick={() => handleRemoveImage(index)}
-                disabled={productImages.length === 1}
-              >
-                Remove Image
+              <button type="button" onClick={() => handleRemoveImage(index)}>
+                Remove
               </button>
             </div>
           ))}
