@@ -22,7 +22,7 @@ const ProductUpdatePage = () => {
   const [error, setError] = useState("");
   const [newSize, setNewSize] = useState("");
   const [newCategory, setNewCategory] = useState("");
-  const [newImages, setNewImages] = useState([]); // For new uploaded images
+  const [newImages, setNewImages] = useState([]); 
   const [deletedImages, setDeletedImages] = useState([]);
 
   useEffect(() => {
