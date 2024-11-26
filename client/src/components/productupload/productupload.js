@@ -3,7 +3,8 @@ import axios from "axios";
 
 const ProductUpload = () => {
   const [productName, setProductName] = useState("");
-  const [productCategory, setProductCategory] = useState("");
+  const [productCategories, setProductCategories] = useState([]);
+  const [categoryInput, setCategoryInput] = useState("");
   const [productPrice, setProductPrice] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [productQuantity, setProductQuantity] = useState("");
@@ -29,10 +30,11 @@ const ProductUpload = () => {
       setImagePreviews(updatedPreviews);
     } else if (name === "sizeInput") {
       setSizeInput(value);
+    } else if (name === "categoryInput") {
+      setCategoryInput(value);
     } else {
       const stateMap = {
         productName: setProductName,
-        productCategory: setProductCategory,
         productPrice: setProductPrice,
         productDescription: setProductDescription,
         productQuantity: setProductQuantity,
@@ -57,6 +59,17 @@ const ProductUpload = () => {
     setProductSize(productSize.filter((item) => item !== size));
   };
 
+  const handleAddCategory = () => {
+    if (categoryInput && !productCategories.includes(categoryInput)) {
+      setProductCategories([...productCategories, categoryInput]);
+      setCategoryInput("");
+    }
+  };
+
+  const handleRemoveCategory = (category) => {
+    setProductCategories(productCategories.filter((item) => item !== category));
+  };
+
   const handleAddImage = () => {
     setProductImages([...productImages, null]);
     setImagePreviews([...imagePreviews, ""]);
@@ -65,8 +78,8 @@ const ProductUpload = () => {
   const handleRemoveImage = (index) => {
     const updatedImages = [...productImages];
     const updatedPreviews = [...imagePreviews];
-    updatedImages.splice(index, 1); // Remove image at index
-    updatedPreviews.splice(index, 1); // Remove preview at index
+    updatedImages.splice(index, 1);
+    updatedPreviews.splice(index, 1);
     setProductImages(updatedImages);
     setImagePreviews(updatedPreviews);
   };
@@ -78,7 +91,7 @@ const ProductUpload = () => {
 
     if (
       !productName ||
-      !productCategory ||
+      !productCategories.length ||
       !productPrice ||
       !productDescription ||
       !productQuantity ||
@@ -101,7 +114,7 @@ const ProductUpload = () => {
 
     const formData = new FormData();
     formData.append("productName", productName);
-    formData.append("productCategory", productCategory);
+    formData.append("productCategories", JSON.stringify(productCategories));
     formData.append("productPrice", parseFloat(productPrice));
     formData.append("productDescription", productDescription);
     formData.append("productQuantity", parseInt(productQuantity, 10));
@@ -123,9 +136,9 @@ const ProductUpload = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
       console.log("Product uploaded successfully:", response.data);
-
+      // Reset form fields after successful upload
       setProductName("");
-      setProductCategory("");
+      setProductCategories([]);
       setProductPrice("");
       setProductDescription("");
       setProductQuantity("");
@@ -159,14 +172,27 @@ const ProductUpload = () => {
           />
         </div>
         <div>
-          <label>Category:</label>
+          <label>Categories:</label>
           <input
             type="text"
-            name="productCategory"
-            value={productCategory}
+            name="categoryInput"
+            value={categoryInput}
             onChange={handleInputChange}
-            required
+            placeholder="Enter category"
           />
+          <button type="button" onClick={handleAddCategory}>
+            Add Category
+          </button>
+          <ul>
+            {productCategories.map((category, index) => (
+              <li key={index}>
+                {category}{" "}
+                <button type="button" onClick={() => handleRemoveCategory(category)}>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
         <div>
           <label>Price:</label>
