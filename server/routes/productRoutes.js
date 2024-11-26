@@ -34,8 +34,8 @@ const upload = multer({
 router.get('/', getProducts);
 router.get('/filters', getProductFilter);
 router.get('/:id', getProductById);
-router.post('/', upload.array('productImages', 10), createProduct);
-router.put('/:id', upload.array('productImages', 10), updateProduct);
+router.post('/', upload.array('productImages', 5), createProduct);
+router.put('/:id', upload.array('productImages', 5), updateProduct);
 router.delete('/:id', deleteProduct);
 
 module.exports = router;

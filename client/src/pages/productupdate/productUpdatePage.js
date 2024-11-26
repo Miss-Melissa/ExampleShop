@@ -1,45 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
 
-function ProductUpdatePage() {
-  const { id } = useParams(); // Get the product ID from the URL params
+const ProductUpdatePage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState(null);
-  const [newImages, setNewImages] = useState([]);  // For new image uploads
-  const [deletedImages, setDeletedImages] = useState([]);  // For images to be deleted
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     productName: '',
-    productCategory: '',
+    productCategory: [], // Ensure productCategory is an array
     productColor: '',
     productBrand: '',
     productGender: '',
-    productSize: [],  
-    productPrice: 0,
+    productSize: [], // Ensuring productSize is an array
+    productPrice: '',
     productDescription: '',
+    productImages: [], // Added images array to store images fetched from the backend
   });
 
-  const [newSize, setNewSize] = useState(''); // For adding new size
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newSize, setNewSize] = useState('');
+  const [newImages, setNewImages] = useState([]); // For storing new images
+  const [deletedImages, setDeletedImages] = useState([]); // For storing deleted images
 
-  // Fetch product data when component mounts
+  // Fetch product data when the component is mounted
   useEffect(() => {
     const fetchProductData = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/products/${id}`);
-        setProduct(response.data);
+        const product = response.data;
+
+        // Ensure productSize and productCategory are arrays
+        const productSize = Array.isArray(product.productSize)
+          ? product.productSize
+          : JSON.parse(product.productSize || '[]'); // Parse if stringified
+
+        const productCategory = Array.isArray(product.productCategory)
+          ? product.productCategory
+          : [product.productCategory]; // Wrap in array if it's not an array
+
         setFormData({
-          productName: response.data.productName,
-          productCategory: response.data.productCategory,
-          productColor: response.data.productColor,
-          productBrand: response.data.productBrand,
-          productGender: response.data.productGender,
-          productSize: response.data.productSize,
-          productPrice: response.data.productPrice,
-          productDescription: response.data.productDescription,
+          productName: product.productName,
+          productCategory: productCategory, // Ensure it's an array
+          productColor: product.productColor,
+          productBrand: product.productBrand,
+          productGender: product.productGender,
+          productSize: productSize, // Ensure it's an array
+          productPrice: product.productPrice,
+          productDescription: product.productDescription,
+          productImages: product.productImages || [], // Initialize with existing images
         });
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching product data:', err);
@@ -57,17 +69,12 @@ function ProductUpdatePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle size input change
-  const handleSizeInputChange = (e) => {
-    setNewSize(e.target.value);
-  };
-
-  // Handle adding a size
+  // Handle adding a new size
   const handleAddSize = () => {
     if (newSize && !formData.productSize.includes(newSize)) {
       setFormData((prev) => ({
         ...prev,
-        productSize: [...prev.productSize, newSize],
+        productSize: [...prev.productSize, newSize], // Add new size to the array
       }));
       setNewSize(''); // Clear the input field after adding
     }
@@ -77,19 +84,19 @@ function ProductUpdatePage() {
   const handleRemoveSize = (size) => {
     setFormData((prev) => ({
       ...prev,
-      productSize: prev.productSize.filter((s) => s !== size),
+      productSize: prev.productSize.filter((s) => s !== size), // Remove the size from the array
     }));
   };
 
-  // Handle image input changes (for new images)
+  // Handle image changes (for new images)
   const handleImageChange = (e) => {
-    setNewImages(e.target.files);  // Store new images
+    setNewImages(e.target.files); // Store new images
   };
 
-  // Handle removing an image (mark for deletion)
+  // Handle image removal (mark for deletion)
   const handleRemoveImage = (image) => {
     setDeletedImages((prev) => [...prev, image]);  // Add image to deleted list
-    setProduct((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       productImages: prev.productImages.filter((img) => img !== image),  // Remove image from UI
     }));
@@ -101,11 +108,14 @@ function ProductUpdatePage() {
 
     const data = new FormData();
     data.append('productName', formData.productName);
-    data.append('productCategory', formData.productCategory);
+    data.append('productCategory', JSON.stringify(formData.productCategory)); // Send productCategory as JSON
     data.append('productColor', formData.productColor);
     data.append('productBrand', formData.productBrand);
     data.append('productGender', formData.productGender);
+
+    // Ensure productSize is sent as an array (stringified)
     data.append('productSize', JSON.stringify(formData.productSize));
+
     data.append('productPrice', formData.productPrice);
     data.append('productDescription', formData.productDescription);
 
@@ -131,64 +141,67 @@ function ProductUpdatePage() {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  // Loading and error handling
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div>
-      <h1>Update Product</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2>Edit Product</h2>
       <form onSubmit={handleSubmit}>
         {/* Product Name */}
         <div>
-          <label>Product Name</label>
+          <label>Product Name:</label>
           <input
             type="text"
-            name="productName"
             value={formData.productName}
             onChange={handleInputChange}
+            name="productName"
           />
         </div>
 
         {/* Product Category */}
         <div>
-          <label>Category</label>
+          <label>Product Category:</label>
           <input
             type="text"
-            name="productCategory"
-            value={formData.productCategory}
-            onChange={handleInputChange}
+            value={formData.productCategory.join(', ')} // Display categories as a string
+            onChange={(e) => {
+              const categories = e.target.value.split(',').map((cat) => cat.trim());
+              setFormData({ ...formData, productCategory: categories });
+            }}
           />
         </div>
 
         {/* Product Color */}
         <div>
-          <label>Color</label>
+          <label>Product Color:</label>
           <input
             type="text"
-            name="productColor"
             value={formData.productColor}
             onChange={handleInputChange}
+            name="productColor"
           />
         </div>
 
         {/* Product Brand */}
         <div>
-          <label>Brand</label>
+          <label>Product Brand:</label>
           <input
             type="text"
-            name="productBrand"
             value={formData.productBrand}
             onChange={handleInputChange}
+            name="productBrand"
           />
         </div>
 
         {/* Product Gender */}
         <div>
-          <label>Gender</label>
+          <label>Product Gender:</label>
           <select
-            name="productGender"
             value={formData.productGender}
             onChange={handleInputChange}
+            name="productGender"
           >
             <option value="Women">Women</option>
             <option value="Men">Men</option>
@@ -196,61 +209,67 @@ function ProductUpdatePage() {
           </select>
         </div>
 
-        {/* Product Size */}
+        {/* Product Sizes */}
         <div>
-          <label>Product Size</label>
+          <label>Product Sizes:</label>
+          <div>
+            <input
+              type="text"
+              value={newSize}
+              onChange={(e) => setNewSize(e.target.value)}
+            />
+            <button type="button" onClick={handleAddSize}>Add Size</button>
+          </div>
+          <ul>
+            {formData.productSize.map((size, index) => (
+              <li key={index}>
+                {size} <button type="button" onClick={() => handleRemoveSize(size)}>Remove</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Product Price */}
+        <div>
+          <label>Product Price:</label>
           <input
-            type="text"
-            value={newSize}
-            onChange={handleSizeInputChange}
-            placeholder="Enter size (e.g., s, m, l)"
+            type="number"
+            value={formData.productPrice}
+            onChange={handleInputChange}
+            name="productPrice"
           />
-          <button type="button" onClick={handleAddSize}>
-            Add Size
-          </button>
         </div>
 
-        {/* Sizes list */}
+        {/* Product Description */}
         <div>
-          <h4>Current Sizes</h4>
-          {formData.productSize.length > 0 ? (
-            formData.productSize.map((size) => (
-              <span key={size}>
-                {size}
-                <button type="button" onClick={() => handleRemoveSize(size)}>
-                  Remove
-                </button>
-              </span>
-            ))
-          ) : (
-            <p>No sizes added</p>
-          )}
+          <label>Product Description:</label>
+          <textarea
+            value={formData.productDescription}
+            onChange={handleInputChange}
+            name="productDescription"
+          />
         </div>
 
-        {/* Upload New Images */}
+        {/* Product Images */}
         <div>
-          <label>Upload New Images</label>
+          <label>Product Images:</label>
           <input
             type="file"
             multiple
             onChange={handleImageChange}
           />
-        </div>
-
-        {/* Existing images */}
-        <h3>Current Images</h3>
-        <div>
-          {product.productImages.map((image, index) => (
-            <div key={index}>
-              <img
-                src={`http://localhost:5000/uploads/${image}`}
-                alt={`Product Image ${index + 1}`}
-                width="100"
-                height="100"
-              />
-              <button onClick={() => handleRemoveImage(image)}>Delete</button>
-            </div>
-          ))}
+          <div>
+            {formData.productImages && formData.productImages.length > 0 && (
+              <ul>
+                {formData.productImages.map((image, index) => (
+                  <li key={index}>
+                    <img src={image} alt={`product-image-${index}`} width={100} />
+                    <button type="button" onClick={() => handleRemoveImage(image)}>Remove</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Submit Button */}
@@ -260,6 +279,6 @@ function ProductUpdatePage() {
       </form>
     </div>
   );
-}
+};
 
 export default ProductUpdatePage;
