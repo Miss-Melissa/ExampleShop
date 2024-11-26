@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
     productCategory:  { type: [String], required: true },
     productBrand: { type: String, required: true }, 
     productColor: { type: String, required: true }, 
-    productGender: { type: String, enum: ['Men', 'Women', 'Unisex'], required: true },
+    productGender: { type: String, enum: [String], required: true },
 });
 
 // Adding indexes for faster searching

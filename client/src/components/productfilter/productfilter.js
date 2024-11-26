@@ -65,6 +65,7 @@ function ProductFilter({ filters, handleFilterChange }) {
 
   // Fetch products based on applied filters
   useEffect(() => {
+    
     const fetchFilteredProducts = async () => {
       try {
         const queryParams = new URLSearchParams();
@@ -141,8 +142,8 @@ function ProductFilter({ filters, handleFilterChange }) {
         onChange={handleFilterChange}
       >
         <option value="">Select Gender</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
+        <option value="men">Men</option>
+        <option value="women">Women</option>
         <option value="unisex">Unisex</option>
       </select>
 
