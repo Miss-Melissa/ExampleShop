@@ -21,6 +21,7 @@ const ProductUpdatePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newSize, setNewSize] = useState('');
+  const [newCategory, setNewCategory] = useState(''); // State for new category
   const [newImages, setNewImages] = useState([]); // For storing new images
   const [deletedImages, setDeletedImages] = useState([]); // For storing deleted images
 
@@ -31,25 +32,24 @@ const ProductUpdatePage = () => {
         const response = await axios.get(`http://localhost:5000/products/${id}`);
         const product = response.data;
 
-        // Ensure productSize and productCategory are arrays
         const productSize = Array.isArray(product.productSize)
           ? product.productSize
-          : JSON.parse(product.productSize || '[]'); // Parse if stringified
+          : JSON.parse(product.productSize || '[]');
 
         const productCategory = Array.isArray(product.productCategory)
           ? product.productCategory
-          : [product.productCategory]; // Wrap in array if it's not an array
+          : [product.productCategory];
 
         setFormData({
           productName: product.productName,
-          productCategory: productCategory, // Ensure it's an array
+          productCategory: productCategory,
           productColor: product.productColor,
           productBrand: product.productBrand,
           productGender: product.productGender,
-          productSize: productSize, // Ensure it's an array
+          productSize: productSize,
           productPrice: product.productPrice,
           productDescription: product.productDescription,
-          productImages: product.productImages || [], // Initialize with existing images
+          productImages: product.productImages || [],
         });
 
         setLoading(false);
@@ -69,14 +69,33 @@ const ProductUpdatePage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle adding a new category
+  const handleAddCategory = () => {
+    if (newCategory && !formData.productCategory.includes(newCategory)) {
+      setFormData((prev) => ({
+        ...prev,
+        productCategory: [...prev.productCategory, newCategory],
+      }));
+      setNewCategory(''); // Clear the input field after adding
+    }
+  };
+
+  // Handle removing a category
+  const handleRemoveCategory = (category) => {
+    setFormData((prev) => ({
+      ...prev,
+      productCategory: prev.productCategory.filter((cat) => cat !== category),
+    }));
+  };
+
   // Handle adding a new size
   const handleAddSize = () => {
     if (newSize && !formData.productSize.includes(newSize)) {
       setFormData((prev) => ({
         ...prev,
-        productSize: [...prev.productSize, newSize], // Add new size to the array
+        productSize: [...prev.productSize, newSize],
       }));
-      setNewSize(''); // Clear the input field after adding
+      setNewSize('');
     }
   };
 
@@ -84,49 +103,69 @@ const ProductUpdatePage = () => {
   const handleRemoveSize = (size) => {
     setFormData((prev) => ({
       ...prev,
-      productSize: prev.productSize.filter((s) => s !== size), // Remove the size from the array
+      productSize: prev.productSize.filter((s) => s !== size),
     }));
   };
 
   // Handle image changes (for new images)
   const handleImageChange = (e) => {
-    setNewImages(e.target.files); // Store new images
+    setNewImages(e.target.files);
   };
 
   // Handle image removal (mark for deletion)
   const handleRemoveImage = (image) => {
-    setDeletedImages((prev) => [...prev, image]);  // Add image to deleted list
+    setDeletedImages((prev) => [...prev, image]);
     setFormData((prev) => ({
       ...prev,
-      productImages: prev.productImages.filter((img) => img !== image),  // Remove image from UI
+      productImages: prev.productImages.filter((img) => img !== image),
     }));
   };
 
-  // Submit the form to update the product
-  const handleSubmit = async (e) => {
+// Ensure `productCategory` and `productSize` are arrays before submission
+const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const data = new FormData();
     data.append('productName', formData.productName);
-    data.append('productCategory', JSON.stringify(formData.productCategory)); // Send productCategory as JSON
+  
+    // Ensure productCategory is an array
+    let productCategory = formData.productCategory;
+    if (typeof productCategory === 'string') {
+      try {
+        productCategory = JSON.parse(productCategory); // Parse the string into an actual array
+      } catch (err) {
+        console.error('Error parsing productCategory:', err);
+        return; // Exit if parsing fails
+      }
+    }
+  
+    // Ensure productSize is also an array
+    let productSize = formData.productSize;
+    if (typeof productSize === 'string') {
+      try {
+        productSize = JSON.parse(productSize); // Parse the string into an actual array
+      } catch (err) {
+        console.error('Error parsing productSize:', err);
+        return; // Exit if parsing fails
+      }
+    }
+  
+    // Append the parsed arrays to FormData
+    data.append('productCategory', JSON.stringify(productCategory)); // Send as JSON string to preserve array structure
+    data.append('productSize', JSON.stringify(productSize)); // Send as JSON string to preserve array structure
+  
+    // Other fields
     data.append('productColor', formData.productColor);
     data.append('productBrand', formData.productBrand);
     data.append('productGender', formData.productGender);
-
-    // Ensure productSize is sent as an array (stringified)
-    data.append('productSize', JSON.stringify(formData.productSize));
-
     data.append('productPrice', formData.productPrice);
     data.append('productDescription', formData.productDescription);
-
-    // Append new images to the form data
+  
+    // Handle images
     for (let i = 0; i < newImages.length; i++) {
       data.append('productImages', newImages[i]);
     }
-
-    // Send the deleted images list
-    data.append('deletedImages', JSON.stringify(deletedImages));
-
+  
     try {
       const response = await axios.put(`http://localhost:5000/products/${id}`, data, {
         headers: {
@@ -134,12 +173,16 @@ const ProductUpdatePage = () => {
         },
       });
       alert('Product updated successfully');
-      navigate('/products');  // Redirect to product list after update
+      navigate('/products');
     } catch (err) {
-      console.error('Error updating product:', err);
-      setError('Failed to update product');
+      console.error('Error updating product:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Failed to update product');
     }
   };
+  
+  
+  
+  
 
   // Loading and error handling
   if (loading) return <div>Loading...</div>;
@@ -162,15 +205,23 @@ const ProductUpdatePage = () => {
 
         {/* Product Category */}
         <div>
-          <label>Product Category:</label>
-          <input
-            type="text"
-            value={formData.productCategory.join(', ')} // Display categories as a string
-            onChange={(e) => {
-              const categories = e.target.value.split(',').map((cat) => cat.trim());
-              setFormData({ ...formData, productCategory: categories });
-            }}
-          />
+          <label>Product Categories:</label>
+          <div>
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+            />
+            <button type="button" onClick={handleAddCategory}>Add Category</button>
+          </div>
+          <ul>
+            {formData.productCategory.map((category, index) => (
+              <li key={index}>
+                {category}{' '}
+                <button type="button" onClick={() => handleRemoveCategory(category)}>Remove</button>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Product Color */}
@@ -223,7 +274,8 @@ const ProductUpdatePage = () => {
           <ul>
             {formData.productSize.map((size, index) => (
               <li key={index}>
-                {size} <button type="button" onClick={() => handleRemoveSize(size)}>Remove</button>
+                {size}{' '}
+                <button type="button" onClick={() => handleRemoveSize(size)}>Remove</button>
               </li>
             ))}
           </ul>
@@ -272,7 +324,7 @@ const ProductUpdatePage = () => {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <div>
           <button type="submit">Update Product</button>
         </div>

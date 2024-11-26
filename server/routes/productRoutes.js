@@ -39,3 +39,5 @@ router.put('/:id', upload.array('productImages', 5), updateProduct);
 router.delete('/:id', deleteProduct);
 
 module.exports = router;
+
+

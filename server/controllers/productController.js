@@ -139,53 +139,66 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     const { id } = req.params;
     const {
-        productName,
-        productPrice,
-        productDescription,
-        productQuantity,
-        productSize,
-        productCategory,
-        productBrand,
-        productColor,
-        productGender,
+      productName,
+      productPrice,
+      productDescription,
+      productQuantity,
+      productSize,
+      productCategory,
+      productBrand,
+      productColor,
+      productGender,
     } = req.body;
-
+  
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ message: 'Invalid product ID' });
+      return res.status(400).json({ message: 'Invalid product ID' });
     }
-
-    const productImages = req.files ? req.files.map((file) => file.filename) : [];
-
+  
     try {
-        const parsedSize = Array.isArray(productSize) ? productSize : JSON.parse(productSize);
-
-        const updatedProduct = await Product.findByIdAndUpdate(
-            id,
-            {
-                productName,
-                productPrice,
-                productDescription,
-                productQuantity,
-                productSize: parsedSize,
-                productCategory,
-                productBrand,
-                productColor,
-                productGender,
-                ...(productImages.length && { productImages }),
-            },
-            { new: true }
-        );
-
-        if (!updatedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        res.json(updatedProduct);
+      // Ensure productCategory is parsed as an array
+      const parsedCategory = Array.isArray(productCategory) ? productCategory : JSON.parse(productCategory || '[]');
+      const parsedSize = Array.isArray(productSize) ? productSize : JSON.parse(productSize || '[]');
+  
+      const existingProduct = await Product.findById(id);
+      if (!existingProduct) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+  
+      // Handle uploaded images
+      const newImages = req.files ? req.files.map((file) => file.filename) : [];
+      const updatedImages = [
+        ...existingProduct.productImages, // Retain old images
+        ...newImages,                    // Add new images
+      ];
+  
+      // Update product in the database
+      const updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        {
+          productName,
+          productCategory: parsedCategory,  // Ensure category is an array
+          productColor,
+          productBrand,
+          productGender,
+          productSize: parsedSize,         // Ensure size is an array
+          productPrice,
+          productDescription,
+          productQuantity,
+          productImages: updatedImages,
+        },
+        { new: true }
+      );
+  
+      res.status(200).json(updatedProduct);
     } catch (err) {
-        console.error('Error updating product:', err.message);
-        res.status(500).json({ message: 'Error updating product' });
+      console.error('Error updating product:', err);
+      res.status(500).json({ message: 'Error updating product', error: err.message });
     }
-};
+  };
+  
+  
+
+
 
 // Function to delete a product
 const deleteProduct = async (req, res) => {
