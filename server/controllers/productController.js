@@ -102,29 +102,52 @@ const createProduct = async (req, res) => {
             productGender,
         } = req.body;
 
-        console.log('Received fields:', req.body);
-        console.log('Received files:', req.files);
+        console.log("Received fields:", req.body);
+        console.log("Received files:", req.files);
 
         // Validate required fields
-        if (!productName || !productPrice || !productQuantity || !productCategory || !productBrand || !productColor || !productGender) {
-            return res.status(400).json({ message: 'All fields are required' });
+        if (
+            !productName ||
+            !productPrice ||
+            !productDescription ||
+            !productQuantity ||
+            !productSize ||
+            !productCategory ||
+            !productBrand ||
+            !productColor ||
+            !productGender
+        ) {
+            return res.status(400).json({ message: "All fields are required" });
         }
 
         // Handle product categories: Parse if it's not already an array
-        let parsedCategory = productCategory;
-        if (typeof productCategory === 'string') {
-            // If productCategory is a string (like a comma-separated string), split it into an array
-            parsedCategory = productCategory.split(',').map((item) => item.trim());
+        let parsedCategory = Array.isArray(productCategory)
+            ? productCategory
+            : productCategory.split(",").map((item) => item.trim());
+
+        // Handle product sizes: Parse if it's not already an array
+        let parsedSize = Array.isArray(productSize)
+            ? productSize
+            : typeof productSize === "string"
+            ? JSON.parse(productSize)
+            : [];
+
+        // Validate parsed size
+        if (!parsedSize.length) {
+            return res
+                .status(400)
+                .json({ message: "At least one product size is required" });
         }
 
         // Handle product images
-        const productImages = req.files ? req.files.map((file) => file.filename) : [];
+        const productImages = req.files
+            ? req.files.map((file) => file.filename)
+            : [];
         if (!productImages.length) {
-            return res.status(400).json({ message: 'At least one image is required' });
+            return res
+                .status(400)
+                .json({ message: "At least one product image is required" });
         }
-
-        // Handle product size
-        const parsedSize = Array.isArray(productSize) ? productSize : JSON.parse(productSize);
 
         // Create a new product document
         const newProduct = new Product({
@@ -133,18 +156,20 @@ const createProduct = async (req, res) => {
             productDescription,
             productQuantity,
             productSize: parsedSize,
-            productCategory: parsedCategory, // Use parsed category array
+            productCategory: parsedCategory,
             productBrand,
             productColor,
             productGender,
-            productImages,  // Images saved in the 'uploads' directory
+            productImages, // Filenames saved from uploads
         });
 
         await newProduct.save();
-        res.status(201).json(newProduct);
+
+        // Respond with success
+        res.status(201).json({ message: "Product created successfully", newProduct });
     } catch (err) {
-        console.error('Error creating product:', err); // Log the full error
-        res.status(500).json({ message: 'Error creating product', error: err.message });
+        console.error("Error creating product:", err); // Log the full error
+        res.status(500).json({ message: "Error creating product", error: err.message });
     }
 };
 

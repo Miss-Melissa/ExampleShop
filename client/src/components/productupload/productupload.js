@@ -83,38 +83,75 @@ const ProductUpload = () => {
     setProductImages(updatedImages);
     setImagePreviews(updatedPreviews);
   };
-  
-  const handleSubmit = async (event) => {
-    event.preventDefault();
 
-    const formData = new FormData();
-    formData.append('productName', productName);
-    formData.append('productPrice', productPrice);
-    formData.append('productDescription', productDescription);
-    formData.append('productQuantity', productQuantity);
-    formData.append('productSize', JSON.stringify(productSize));  // If it's an array, stringify it
-    formData.append('productGender', productGender);
-    formData.append('productBrand', productBrand);
-    formData.append('productColor', productColor);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    // Handle multiple categories
-    formData.append('productCategory', productCategories.join(','));  // Join array as a comma-separated string
-
-    // Append each file image (assuming productImages is an array of files)
-    productImages.forEach((imageFile) => {
-        formData.append('productImages', imageFile);  // Append each file to 'productImages'
-    });
+    // Validate all fields before submitting
+    if (
+        !productName ||
+        !productPrice ||
+        !productDescription ||
+        !productQuantity ||
+        !productGender ||
+        !productBrand ||
+        !productColor ||
+        !productCategories.length ||
+        !productImages.length
+    ) {
+        console.error("All fields are required");
+        alert("Please fill in all required fields");
+        return;
+    }
 
     try {
-        // Send the form data to your server
-        const response = await axios.post("http://localhost:5000/products", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",  // Ensure it's set to multipart/form-data
-            },
+        const formData = new FormData();
+
+        // Append text fields
+        formData.append("productName", productName);
+        formData.append("productPrice", productPrice);
+        formData.append("productDescription", productDescription);
+        formData.append("productQuantity", productQuantity);
+        formData.append("productGender", productGender);
+        formData.append("productBrand", productBrand);
+        formData.append("productColor", productColor);
+
+        // Append categories (array of strings)
+        productCategories.forEach((category) =>
+            formData.append("productCategory", category)
+        );
+
+        // Append sizes (array of strings)
+        productSize.forEach((size) => formData.append("productSize", size));
+
+        // Append images
+        Array.from(productImages).forEach((image) =>
+            formData.append("productImages", image)
+        );
+
+        // Debugging: Log FormData content
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
+
+        // Make the POST request
+        const response = await fetch("http://localhost:5000/products", {
+            method: "POST",
+            body: formData,
         });
-        console.log("Product uploaded successfully:", response.data);
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log("Product uploaded successfully:", result);
+            alert("Product uploaded successfully!");
+        } else {
+            const error = await response.json();
+            console.error("Error uploading product:", error);
+            alert(`Error: ${error.message}`);
+        }
     } catch (err) {
-        console.error("Error uploading product:", err.response?.data || err.message);
+        console.error("Error submitting the form:", err);
+        alert("An error occurred while submitting the form. Please try again.");
     }
 };
 
