@@ -40,9 +40,9 @@ const upload = multer({
 // Routes
 router.get('/', getProducts);
 router.get('/filters', getProductFilter);
-router.get('/:id', getProductById);
 router.post('/', upload.array('productImages', 5), createProduct); // Handle file uploads for product creation
 router.put('/:id', upload.array('productImages', 5), updateProduct); // Handle file uploads for product update
+router.get('/:id', getProductById);
 router.delete('/:id', deleteProduct);
 
 module.exports = router;

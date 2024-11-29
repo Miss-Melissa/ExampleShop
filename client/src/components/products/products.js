@@ -83,7 +83,6 @@ const Products = ({ searchQuery }) => {
 
   return (
     <div>
-      <ProductFilter filters={filters} handleFilterChange={handleFilterChange} />
 
       <div>
         {products.length > 0 ? (

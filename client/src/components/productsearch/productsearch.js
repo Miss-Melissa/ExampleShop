@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const ProductSearch = ({ onSearch }) => {
+const ProductSearch = ({ onSearch, filters }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Handle search input change
   const handleSearchChange = (e) => {
-    const query = e.target.value; // Get the value of the input
+    const query = e.target.value;
     setSearchQuery(query); // Update the local search query state
-    onSearch(query); // Pass the query directly to the parent component
+    onSearch(query, filters); // Pass the query and filters to the parent component
   };
+
+  useEffect(() => {
+    // Automatically trigger search when filters are applied
+    if (filters) {
+      onSearch(searchQuery, filters);
+    }
+  }, [filters, searchQuery, onSearch]); // Re-run when either filters or searchQuery changes
 
   return (
     <div>

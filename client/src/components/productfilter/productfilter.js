@@ -9,48 +9,57 @@ function ProductFilter({ filters, handleFilterChange }) {
     sizes: [],
   });
 
-  useEffect(() => {
-    // Fetch the available filter options from the backend
-    const fetchFilterOptions = async () => {
-      try {
-          const response = await axios.get('http://localhost:5000/products/filters');
-          setFilterOptions(response.data); // Assuming the response structure contains categories, colors, brands, and sizes
-      } catch (error) {
-          console.error("Error fetching filter options:", error);
-          if (error.response) {
-              console.error("Response Error:", error.response.data); // Detailed error response from server
-          }
-      }
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-    fetchFilterOptions();
-  }, []); // This will run once when the component mounts
+  // Function to fetch filter options based on selected filters
+  const fetchFilterOptions = async () => {
+    setLoading(true);
+    setError(null);
 
-  // Handle slider change for price range (min/max)
-  const handleSliderChange = (e) => {
-    const { name, value } = e.target;
+    try {
+      // Build query string based on selected filters
+      const queryParams = new URLSearchParams();
+      if (filters.category) queryParams.append("category", filters.category);
+      if (filters.color) queryParams.append("color", filters.color);
+      if (filters.size) queryParams.append("size", filters.size);
+      if (filters.brand) queryParams.append("brand", filters.brand);
+      if (filters.gender) queryParams.append("gender", filters.gender);
 
-    // Ensure price_min is never greater than price_max and not equal
-    if (name === "price_min") {
-      if (value >= filters.price_max) {
-        handleFilterChange({ target: { name: "price_min", value: filters.price_max - 10 } });
-      } else if (value === filters.price_max) {
-        handleFilterChange({ target: { name: "price_min", value: value - 10 } });
-      } else {
-        handleFilterChange({ target: { name, value } });
-      }
-    } else if (name === "price_max") {
-      if (value <= filters.price_min) {
-        handleFilterChange({ target: { name: "price_max", value: filters.price_min + 10 } });
-      } else if (value === filters.price_min) {
-        handleFilterChange({ target: { name: "price_max", value: value + 10 } });
-      } else {
-        handleFilterChange({ target: { name, value } });
-      }
+      const response = await axios.get(
+        `http://localhost:5000/products/filters?${queryParams.toString()}`
+      );
+
+      setFilterOptions({
+        categories: response.data.categories,
+        colors: response.data.colors,
+        brands: response.data.brands,
+        sizes: response.data.sizes,
+      });
+    } catch (error) {
+      setError("Error fetching filter options");
+      console.error("Error fetching filter options:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Check if any filter is selected, and apply filters or fetch all products
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [filters]); // Triggered whenever any filter is changed
+
+  const handleSliderChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "price_min") {
+      const newValue = Math.min(value, filters.price_max - 10);
+      handleFilterChange({ target: { name, value: newValue } });
+    } else if (name === "price_max") {
+      const newValue = Math.max(value, filters.price_min + 10);
+      handleFilterChange({ target: { name, value: newValue } });
+    }
+  };
+
   const isFilterApplied = () => {
     return (
       filters.category ||
@@ -63,42 +72,18 @@ function ProductFilter({ filters, handleFilterChange }) {
     );
   };
 
-  // Fetch products based on applied filters
-  useEffect(() => {
-    
-    const fetchFilteredProducts = async () => {
-      try {
-        const queryParams = new URLSearchParams();
-
-        if (isFilterApplied()) {
-          if (filters.category) queryParams.append('category', filters.category);
-          if (filters.color) queryParams.append('color', filters.color);
-          if (filters.brand) queryParams.append('brand', filters.brand);
-          if (filters.size) queryParams.append('size', filters.size);
-          if (filters.gender) queryParams.append('gender', filters.gender);
-          if (filters.price_min) queryParams.append('price_min', filters.price_min);
-          if (filters.price_max) queryParams.append('price_max', filters.price_max);
-        }
-
-        const response = await axios.get(`http://localhost:5000/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`);
-        // Handle the response and display products
-        console.log(response.data); // Update the UI with fetched products
-      } catch (error) {
-        console.error("Error fetching filtered products:", error);
-      }
-    };
-
-    fetchFilteredProducts();
-  }, [filters]); // Whenever filters change, fetch products
+  // Handle the changes in any of the filters
+  const handleFilterChangeInternal = (e) => {
+    handleFilterChange(e);
+  };
 
   return (
     <div>
+      {loading && <p>Loading filter options...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       {/* Category Filter */}
-      <select
-        name="category"
-        value={filters.category}
-        onChange={handleFilterChange}
-      >
+      <select name="category" value={filters.category} onChange={handleFilterChangeInternal}>
         <option value="">Select Category</option>
         {filterOptions.categories.map((category, index) => (
           <option key={index} value={category}>
@@ -108,11 +93,7 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Color Filter */}
-      <select
-        name="color"
-        value={filters.color}
-        onChange={handleFilterChange}
-      >
+      <select name="color" value={filters.color} onChange={handleFilterChangeInternal}>
         <option value="">Select Color</option>
         {filterOptions.colors.map((color, index) => (
           <option key={index} value={color}>
@@ -122,11 +103,7 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Brand Filter */}
-      <select
-        name="brand"
-        value={filters.brand}
-        onChange={handleFilterChange}
-      >
+      <select name="brand" value={filters.brand} onChange={handleFilterChangeInternal}>
         <option value="">Select Brand</option>
         {filterOptions.brands.map((brand, index) => (
           <option key={index} value={brand}>
@@ -136,11 +113,7 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Gender Filter */}
-      <select
-        name="gender"
-        value={filters.gender}
-        onChange={handleFilterChange}
-      >
+      <select name="gender" value={filters.gender} onChange={handleFilterChangeInternal}>
         <option value="">Select Gender</option>
         <option value="men">Men</option>
         <option value="women">Women</option>
@@ -148,11 +121,7 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Size Filter */}
-      <select
-        name="size"
-        value={filters.size}
-        onChange={handleFilterChange}
-      >
+      <select name="size" value={filters.size} onChange={handleFilterChangeInternal}>
         <option value="">Select Size</option>
         {filterOptions.sizes.map((size, index) => (
           <option key={index} value={size}>
@@ -184,9 +153,7 @@ function ProductFilter({ filters, handleFilterChange }) {
             onChange={handleSliderChange}
           />
         </div>
-        <p>
-          Selected Price Range: ${filters.price_min} - ${filters.price_max}
-        </p>
+        <p>Min: {filters.price_min} - Max: {filters.price_max}</p>
       </div>
     </div>
   );

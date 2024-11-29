@@ -19,6 +19,7 @@ if (!process.env.PORT) {
   process.exit(1);
 }
 
+
 connectDB();
 
 // Middleware
