@@ -115,9 +115,9 @@ function ProductFilter({ filters, handleFilterChange }) {
       {/* Gender Filter */}
       <select name="gender" value={filters.gender} onChange={handleFilterChangeInternal}>
         <option value="">Select Gender</option>
-        <option value="men">Men</option>
-        <option value="women">Women</option>
-        <option value="unisex">Unisex</option>
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Unisex">Unisex</option>
       </select>
 
       {/* Size Filter */}

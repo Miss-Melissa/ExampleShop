@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import BuyBtn from "../buybtn/buybtn";
-import ProductFilter from "../productfilter/productfilter";
+import ProductFilter from "../productfilter/productfilter"; // Assuming you have a filter component
 
 const Products = ({ searchQuery }) => {
   const [products, setProducts] = useState([]);
@@ -23,6 +23,7 @@ const Products = ({ searchQuery }) => {
 
   const [selectedSizes, setSelectedSizes] = useState({});
 
+  // Handle changes in filter inputs (category, color, etc.)
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -31,6 +32,7 @@ const Products = ({ searchQuery }) => {
     }));
   };
 
+  // Debouncing filter changes before sending them to the backend
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFilters(filters);
@@ -38,6 +40,7 @@ const Products = ({ searchQuery }) => {
     return () => clearTimeout(timer);
   }, [filters]);
 
+  // Fetch products when filters, page, or search query changes
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -46,8 +49,8 @@ const Products = ({ searchQuery }) => {
           params: {
             page,
             limit,
-            query: searchQuery,
-            ...debouncedFilters,
+            query: searchQuery,   // Pass the search query
+            ...debouncedFilters,  // Pass the filtered values
           },
         });
         setProducts(response.data.products);
@@ -83,6 +86,7 @@ const Products = ({ searchQuery }) => {
 
   return (
     <div>
+      <ProductFilter filters={filters} handleFilterChange={handleFilterChange} />
 
       <div>
         {products.length > 0 ? (

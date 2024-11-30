@@ -1,21 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-const ProductSearch = ({ onSearch, filters }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ProductSearch = ({ onSearch }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query); // Update the local search query state
-    onSearch(query, filters); // Pass the query and filters to the parent component
-  };
+  // Debounce effect to minimize frequent updates
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery); // Update debounced query after a delay
+    }, 300); // Adjust delay as needed (300ms is common for debouncing)
+
+    return () => {
+      clearTimeout(handler); // Cleanup debounce timeout
+    };
+  }, [searchQuery]);
 
   useEffect(() => {
-    // Automatically trigger search when filters are applied
-    if (filters) {
-      onSearch(searchQuery, filters);
-    }
-  }, [filters, searchQuery, onSearch]); // Re-run when either filters or searchQuery changes
+    onSearch(debouncedQuery); // Trigger search only when debounced query changes
+  }, [debouncedQuery, onSearch]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery(""); // Clear search query
+    onSearch(""); // Notify parent of cleared search
+  };
 
   return (
     <div>
@@ -23,8 +34,10 @@ const ProductSearch = ({ onSearch, filters }) => {
         type="text"
         placeholder="Search products..."
         value={searchQuery}
-        onChange={handleSearchChange} // Trigger search as the user types
+        onChange={handleSearchChange}
+        aria-label="Search products"
       />
+      {searchQuery && <button onClick={clearSearch}>Clear</button>} {/* Show clear button only if there's a query */}
     </div>
   );
 };

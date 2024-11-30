@@ -31,9 +31,10 @@ const getProductFilter = async (req, res) => {
       searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
     }
 
-    // If gender is selected, filter based on productGender
+    // If gender is selected, normalize and filter based on productGender
     if (gender) {
-      searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
+      const formattedGender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase(); // Normalize gender
+      searchCriteria.productGender = { $regex: `^${formattedGender}$`, $options: 'i' };
     }
 
     // Fetch the distinct filter options based on the search criteria
