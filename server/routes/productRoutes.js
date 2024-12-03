@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getProducts, getProductById, getProductFilter, createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
+const { getProducts, getProductById, getProductFilter, getProductSearch, createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
 
 // Set up upload directory if it doesn't exist
 const uploadDir = 'uploads/';
@@ -39,6 +39,7 @@ const upload = multer({
 
 // Routes
 router.get('/', getProducts);
+router.get('/search', getProductSearch);
 router.get('/filters', getProductFilter);
 router.post('/', upload.array('productImages', 5), createProduct); // Handle file uploads for product creation
 router.put('/:id', upload.array('productImages', 5), updateProduct); // Handle file uploads for product update

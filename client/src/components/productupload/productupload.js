@@ -234,12 +234,11 @@ const ProductUpload = () => {
             value={productPrice}
             onChange={handleInputChange}
             required
-            min="0.01"
-            step="0.01"
+            min="0"
           />
         </div>
 
-        {/* Product Description */}
+        {/* Description */}
         <div>
           <label>Description:</label>
           <textarea
@@ -259,19 +258,19 @@ const ProductUpload = () => {
             value={productQuantity}
             onChange={handleInputChange}
             required
-            min="1"
+            min="0"
           />
         </div>
 
-        {/* Product Size */}
+        {/* Sizes */}
         <div>
-          <label>Size:</label>
+          <label>Sizes:</label>
           <input
             type="text"
             name="sizeInput"
             value={sizeInput}
             onChange={handleInputChange}
-            placeholder="Enter size (e.g., S, M, L)"
+            placeholder="Enter size"
           />
           <button type="button" onClick={handleAddSize}>
             Add Size
@@ -288,23 +287,19 @@ const ProductUpload = () => {
           </ul>
         </div>
 
-        {/* Product Gender */}
+        {/* Gender */}
         <div>
           <label>Gender:</label>
-          <select
+          <input
+            type="text"
             name="productGender"
             value={productGender}
             onChange={handleInputChange}
             required
-          >
-            <option value="">Select</option>
-            <option value="Men">Men</option>
-            <option value="Women">Women</option>
-            <option value="Unisex">Unisex</option>
-          </select>
+          />
         </div>
 
-        {/* Product Brand */}
+        {/* Brand */}
         <div>
           <label>Brand:</label>
           <input
@@ -316,7 +311,7 @@ const ProductUpload = () => {
           />
         </div>
 
-        {/* Product Color */}
+        {/* Color */}
         <div>
           <label>Color:</label>
           <input
@@ -328,66 +323,37 @@ const ProductUpload = () => {
           />
         </div>
 
-        {/* Product Images */}
+        {/* Images */}
         <div>
-          <label>Product Images:</label>
-          {productImages.map((_, index) => (
+          <label>Images:</label>
+          <button type="button" onClick={handleAddImage}>
+            Add Image
+          </button>
+          {productImages.map((image, index) => (
             <div key={index}>
               <input
                 type="file"
                 name="productImages"
                 onChange={(e) => handleInputChange(e, index)}
-                accept="image/*"
+                required
               />
               {imagePreviews[index] && (
-                <img
-                  src={imagePreviews[index]}
-                  alt={`Preview ${index + 1}`}
-                  style={{ width: "100px", height: "auto" }}
-                />
+                <img src={imagePreviews[index]} alt="Preview" width="100" />
               )}
-              <button type="button" onClick={() => handleRemoveImage(index)}>
+              <button
+                type="button"
+                onClick={() => handleRemoveImage(index)}
+              >
                 Remove
               </button>
             </div>
           ))}
-          <button type="button" onClick={handleAddImage}>
-            Add Image
-          </button>
         </div>
 
         <button type="submit" disabled={loading}>
           {loading ? "Uploading..." : "Upload Product"}
         </button>
       </form>
-
-      {/* Render the list of products below */}
-      <div>
-        <h3>Product List</h3>
-        <ul>
-          {Array.isArray(productList) &&
-            productList.map((product, index) => (
-              <li key={index}>
-                <h4>{product.productName}</h4>
-                <p>Price: ${product.productPrice}</p>
-                <p>{product.productDescription}</p>
-                <p>Quantity: {product.productQuantity}</p>
-                <p>Size: {product.productSize?.join(", ")}</p>
-                <p>Gender: {product.productGender}</p>
-                <p>Brand: {product.productBrand}</p>
-                <p>Color: {product.productColor}</p>
-                <p>Categories: {product.productCategory?.join(", ")}</p>
-                {product.productImages && product.productImages.length > 0 && (
-                  <img
-                    src={product.productImages[0]} // Display the first image
-                    alt={product.productName}
-                    style={{ width: "100px", height: "auto" }}
-                  />
-                )}
-              </li>
-            ))}
-        </ul>
-      </div>
     </div>
   );
 };

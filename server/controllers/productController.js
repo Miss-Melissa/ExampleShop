@@ -73,6 +73,87 @@ const getProductFilter = async (req, res) => {
   }
 };
 
+const getProductSearch = async (req, res) => {
+  const {
+    searchQuery,
+    category,
+    color,
+    size,
+    brand,
+    gender,
+    price_min,
+    price_max,
+    page = 1,
+    limit = 10,
+  } = req.query;
+
+  try {
+    const searchCriteria = {};
+
+    // Generic search query (exclude gender here for precision)
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = { $regex: searchQuery, $options: 'i' };
+      searchCriteria.$or = [
+        { productName: searchRegex },
+        { productCategory: searchRegex },
+        { productBrand: searchRegex },
+        { productColor: searchRegex },
+        { productGender: searchRegex },
+      ];
+    }
+
+    // Explicit gender filter
+    if (gender && gender.trim()) {
+      searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
+    }
+
+    // Apply additional filters
+    if (category && category.trim()) {
+      searchCriteria.productCategory = { $regex: category, $options: 'i' };
+    }
+
+    if (color && color.trim()) {
+      searchCriteria.productColor = { $regex: color, $options: 'i' };
+    }
+
+    if (brand && brand.trim()) {
+      searchCriteria.productBrand = { $regex: brand, $options: 'i' };
+    }
+
+    if (size && size.trim()) {
+      searchCriteria.productSize = size;
+    }
+
+    // Apply price range filters
+    if (price_min || price_max) {
+      searchCriteria.productPrice = {};
+      if (price_min) searchCriteria.productPrice.$gte = parseFloat(price_min);
+      if (price_max) searchCriteria.productPrice.$lte = parseFloat(price_max);
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Fetch products from DB with applied filters
+    const products = await Product.find(searchCriteria)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Count total products for pagination
+    const totalProducts = await Product.countDocuments(searchCriteria);
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    res.json({
+      products,
+      totalProducts,
+      totalPages,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 
 const getProducts = async (req, res) => {
   const {
@@ -157,7 +238,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-
 // Function to create a new product
 const createProduct = async (req, res) => {
   try {
@@ -191,16 +271,15 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Normalize the productGender to ensure it's properly capitalized
-    const formattedGender =
-      productGender.charAt(0).toUpperCase() +
-      productGender.slice(1).toLowerCase();
-
-    // Check if the gender is valid
-    const validGenders = ["Men", "Women", "Unisex"];
+    // Normalize productGender to lowercase for consistency
+    const formattedGender = productGender.trim().toLowerCase();
+    const validGenders = ["men", "women", "unisex"];
     if (!validGenders.includes(formattedGender)) {
       return res.status(400).json({ message: "Invalid gender value" });
     }
+
+    // Standardize gender to proper format (Capitalized)
+    const formattedGenderProperCase = formattedGender.charAt(0).toUpperCase() + formattedGender.slice(1);
 
     // Handle product categories: Parse if it's not already an array
     let parsedCategory = Array.isArray(productCategory)
@@ -211,7 +290,7 @@ const createProduct = async (req, res) => {
     let parsedSize = Array.isArray(productSize)
       ? productSize
       : typeof productSize === "string"
-      ? JSON.parse(productSize)
+      ? productSize.split(",").map((item) => item.trim()) // Split by commas
       : [];
 
     // Validate parsed size
@@ -241,7 +320,7 @@ const createProduct = async (req, res) => {
       productCategory: parsedCategory,
       productBrand,
       productColor,
-      productGender: formattedGender, // Store the normalized gender value
+      productGender: formattedGenderProperCase, // Store the normalized gender value
       productImages, // Filenames saved from uploads
     });
 
@@ -252,7 +331,7 @@ const createProduct = async (req, res) => {
       .status(201)
       .json({ message: "Product created successfully", newProduct });
   } catch (err) {
-    console.error("Error creating product:", err); // Log the full error
+    console.error("Error creating product:", err.message); // Log the full error message
     res
       .status(500)
       .json({ message: "Error creating product", error: err.message });
@@ -357,6 +436,7 @@ module.exports = {
   getProducts,
   getProductById,
   getProductFilter,
+  getProductSearch,
   createProduct,
   updateProduct,
   deleteProduct,

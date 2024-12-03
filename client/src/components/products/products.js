@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import BuyBtn from "../buybtn/buybtn";
-import ProductFilter from "../productfilter/productfilter"; // Assuming you have a filter component
+import ProductFilter from "../productfilter/productfilter";
+import ProductSearch from "../productsearch/productsearch";
 
-const Products = ({ searchQuery }) => {
+const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [limit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [filters, setFilters] = useState({
     category: "",
     color: "",
@@ -20,7 +22,6 @@ const Products = ({ searchQuery }) => {
     price_max: 1000,
   });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
-
   const [selectedSizes, setSelectedSizes] = useState({});
 
   // Handle changes in filter inputs (category, color, etc.)
@@ -32,11 +33,11 @@ const Products = ({ searchQuery }) => {
     }));
   };
 
-  // Debouncing filter changes before sending them to the backend
+  // Debounce filters before sending to the backend
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFilters(filters);
-    }, 500);
+    }, 500); // Debounce delay of 500ms
     return () => clearTimeout(timer);
   }, [filters]);
 
@@ -45,16 +46,22 @@ const Products = ({ searchQuery }) => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:5000/products", {
+        const response = await axios.get("http://localhost:5000/products/search", {
           params: {
             page,
             limit,
-            query: searchQuery,   // Pass the search query
-            ...debouncedFilters,  // Pass the filtered values
+            searchQuery, // Pass search query
+            ...debouncedFilters, // Pass filters
           },
         });
-        setProducts(response.data.products);
-        setTotalPages(response.data.totalPages);
+
+        // Set products and total pages from the response
+        if (response.data.products) {
+          setProducts(response.data.products);
+          setTotalPages(response.data.totalPages);
+          console.log("Filters applied:", { page, limit, searchQuery, ...debouncedFilters });
+console.log("Response data:", response.data.products);
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -62,8 +69,11 @@ const Products = ({ searchQuery }) => {
       }
     };
 
-    fetchProducts();
-  }, [page, searchQuery, debouncedFilters, limit]);
+    // Only fetch if search query or filters are set
+    if (searchQuery || Object.values(debouncedFilters).some((val) => val)) {
+      fetchProducts();
+    }
+  }, [page, searchQuery, debouncedFilters, limit]); // Trigger when filters, searchQuery, or page changes
 
   const handleSizeChange = (productId, size) => {
     setSelectedSizes((prevSizes) => ({
@@ -82,10 +92,19 @@ const Products = ({ searchQuery }) => {
     }
   };
 
+  // Handle search query change from ProductSearch component
+  const handleSearch = (query) => {
+    setSearchQuery(query); // Update search query state
+  };
+
   if (loading) return <p>Loading products...</p>;
 
   return (
     <div>
+      {/* ProductSearch component to handle user search */}
+      <ProductSearch onSearch={handleSearch} />
+
+      {/* ProductFilter component */}
       <ProductFilter filters={filters} handleFilterChange={handleFilterChange} />
 
       <div>
@@ -114,6 +133,7 @@ const Products = ({ searchQuery }) => {
                 <p>Price: ${product.productPrice}</p>
               </Link>
 
+              {/* Handle size selection */}
               {product.productSize && product.productSize.length > 0 ? (
                 <div>
                   <h4>Available Sizes:</h4>
@@ -141,6 +161,7 @@ const Products = ({ searchQuery }) => {
         )}
 
         <div>
+          {/* Pagination Controls */}
           {page > 1 && (
             <button onClick={() => handlePageChange(page - 1)}>Previous Page</button>
           )}

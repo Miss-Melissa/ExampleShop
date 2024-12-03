@@ -7,6 +7,7 @@ function ProductFilter({ filters, handleFilterChange }) {
     colors: [],
     brands: [],
     sizes: [],
+    genders: []  // Added genders array
   });
 
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,7 @@ function ProductFilter({ filters, handleFilterChange }) {
         colors: response.data.colors,
         brands: response.data.brands,
         sizes: response.data.sizes,
+        genders: response.data.genders || ["Men", "Women", "Unisex"], // Default to common genders if not provided
       });
     } catch (error) {
       setError("Error fetching filter options");
@@ -83,7 +85,11 @@ function ProductFilter({ filters, handleFilterChange }) {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {/* Category Filter */}
-      <select name="category" value={filters.category} onChange={handleFilterChangeInternal}>
+      <select
+        name="category"
+        value={filters.category}
+        onChange={handleFilterChangeInternal}
+      >
         <option value="">Select Category</option>
         {filterOptions.categories.map((category, index) => (
           <option key={index} value={category}>
@@ -93,7 +99,11 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Color Filter */}
-      <select name="color" value={filters.color} onChange={handleFilterChangeInternal}>
+      <select
+        name="color"
+        value={filters.color}
+        onChange={handleFilterChangeInternal}
+      >
         <option value="">Select Color</option>
         {filterOptions.colors.map((color, index) => (
           <option key={index} value={color}>
@@ -103,7 +113,11 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Brand Filter */}
-      <select name="brand" value={filters.brand} onChange={handleFilterChangeInternal}>
+      <select
+        name="brand"
+        value={filters.brand}
+        onChange={handleFilterChangeInternal}
+      >
         <option value="">Select Brand</option>
         {filterOptions.brands.map((brand, index) => (
           <option key={index} value={brand}>
@@ -113,15 +127,25 @@ function ProductFilter({ filters, handleFilterChange }) {
       </select>
 
       {/* Gender Filter */}
-      <select name="gender" value={filters.gender} onChange={handleFilterChangeInternal}>
+      <select
+        name="gender"
+        value={filters.gender}
+        onChange={handleFilterChangeInternal}
+      >
         <option value="">Select Gender</option>
-        <option value="Men">Men</option>
-        <option value="Women">Women</option>
-        <option value="Unisex">Unisex</option>
+        {filterOptions.genders.map((gender, index) => (
+          <option key={index} value={gender}>
+            {gender}
+          </option>
+        ))}
       </select>
 
       {/* Size Filter */}
-      <select name="size" value={filters.size} onChange={handleFilterChangeInternal}>
+      <select
+        name="size"
+        value={filters.size}
+        onChange={handleFilterChangeInternal}
+      >
         <option value="">Select Size</option>
         {filterOptions.sizes.map((size, index) => (
           <option key={index} value={size}>

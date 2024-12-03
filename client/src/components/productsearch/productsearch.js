@@ -1,43 +1,47 @@
 import React, { useState, useEffect } from "react";
 
 const ProductSearch = ({ onSearch }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [query, setQuery] = useState(""); // Local query state
+  const [debouncedQuery, setDebouncedQuery] = useState(""); // Debounced query state
 
-  // Debounce effect to minimize frequent updates
+  // Debounce logic to delay the search query update
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchQuery); // Update debounced query after a delay
-    }, 300); // Adjust delay as needed (300ms is common for debouncing)
+    // Create a timer to delay the update
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query); // Set the debounced query after 500ms
+    }, 500);
 
+    // Cleanup the previous timer when the query changes before the timer ends
     return () => {
-      clearTimeout(handler); // Cleanup debounce timeout
+      console.log("Clearing debounce timer...");
+      clearTimeout(timer);
     };
-  }, [searchQuery]);
+  }, [query]); // Runs every time query changes
 
   useEffect(() => {
-    onSearch(debouncedQuery); // Trigger search only when debounced query changes
-  }, [debouncedQuery, onSearch]);
+    // Perform the search when debounced query is updated
+    if (debouncedQuery.trim() !== "") {
+      console.log("Search triggered with query:", debouncedQuery);
+      onSearch(debouncedQuery); // Pass the debounced query to the parent component
+    } else if (debouncedQuery === "") {
+      console.log("Search query is empty, no search triggered");
+      // Optionally, you can trigger a reset behavior here if needed
+    }
+  }, [debouncedQuery, onSearch]); // Runs when debouncedQuery changes
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery(""); // Clear search query
-    onSearch(""); // Notify parent of cleared search
+  // Handle input changes
+  const handleInputChange = (e) => {
+    setQuery(e.target.value); // Update local query state on user input
   };
 
   return (
     <div>
       <input
         type="text"
+        value={query}
+        onChange={handleInputChange}
         placeholder="Search products..."
-        value={searchQuery}
-        onChange={handleSearchChange}
-        aria-label="Search products"
       />
-      {searchQuery && <button onClick={clearSearch}>Clear</button>} {/* Show clear button only if there's a query */}
     </div>
   );
 };

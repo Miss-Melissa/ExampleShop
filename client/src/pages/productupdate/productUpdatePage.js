@@ -219,19 +219,19 @@ const ProductUpdatePage = () => {
           />
         </div>
 
+
+        
         {/* Product Gender */}
         <div>
           <label>Product Gender:</label>
-          <select
+          <input
+            type="text"
             value={formData.productGender}
             onChange={handleInputChange}
             name="productGender"
-          >
-            <option value="Women">Women</option>
-            <option value="Men">Men</option>
-            <option value="Unisex">Unisex</option>
-          </select>
+          />
         </div>
+
 
         {/* Product Sizes */}
         <div>
