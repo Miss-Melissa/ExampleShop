@@ -41,23 +41,8 @@ const getProductFilter = async (req, res) => {
     const categories = await Product.distinct("productCategory", searchCriteria);
     const colors = await Product.distinct("productColor", searchCriteria);
     const brands = await Product.distinct("productBrand", searchCriteria);
-
-    // Initialize sizes array for all available sizes
-    let sizes = await Product.distinct("productSize", searchCriteria);
-
-    // If category is selected, we filter the sizes based on the category
-    let categorySizes = [];
-    if (category) {
-      const categoriesArray = Array.isArray(category) ? category : [category];
-
-      // Get distinct sizes for the selected categories
-      categorySizes = await Product.distinct("productSize", {
-        productCategory: { $in: categoriesArray },
-      });
-
-      // If categorySizes are found, we use that instead of the global sizes list
-      sizes = categorySizes;
-    }
+    const genders = await Product.distinct("productGender", searchCriteria);
+    const sizes = await Product.distinct("productSize", searchCriteria);
 
     // Send back the available filter options
     res.json({
@@ -65,7 +50,7 @@ const getProductFilter = async (req, res) => {
       colors,
       brands,
       sizes,
-      categorySizes,  // This will include sizes filtered by category (if available)
+      genders,
     });
   } catch (err) {
     console.error("Error fetching filter options:", err.message);
@@ -102,12 +87,12 @@ const getProductSearch = async (req, res) => {
       ];
     }
 
-    // Explicit gender filter
+    // Explicit gender filter (if provided)
     if (gender && gender.trim()) {
       searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
     }
 
-    // Apply additional filters
+    // Apply other filters (category, color, size, brand, price)
     if (category && category.trim()) {
       searchCriteria.productCategory = { $regex: category, $options: 'i' };
     }
@@ -142,16 +127,30 @@ const getProductSearch = async (req, res) => {
     const totalProducts = await Product.countDocuments(searchCriteria);
     const totalPages = Math.ceil(totalProducts / limit);
 
+    // Get the available filters based on the current search criteria
+    const categories = await Product.distinct("productCategory", searchCriteria);
+    const colors = await Product.distinct("productColor", searchCriteria);
+    const brands = await Product.distinct("productBrand", searchCriteria);
+    const sizes = await Product.distinct("productSize", searchCriteria);
+
+    // Send back the search results and dynamic filter options
     res.json({
       products,
       totalProducts,
       totalPages,
+      filters: {
+        categories,
+        colors,
+        brands,
+        sizes,
+      },
     });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 
