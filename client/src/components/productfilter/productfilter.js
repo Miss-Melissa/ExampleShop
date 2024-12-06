@@ -44,6 +44,9 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
     fetchFilterOptions();
   }, [filters, searchQuery]); // Uppdatera när filter eller sökfråga ändras
 
+  // Ensure the default max price is set to 10,000 if not already set
+  const priceMax = filters.price_max || 10000;
+
   const handleSliderChange = (e) => {
     const { name, value } = e.target;
 
@@ -131,7 +134,7 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
             type="range"
             name="price_min"
             min="0"
-            max="1000"
+            max="10000"
             step="10"
             value={filters.price_min}
             onChange={handleSliderChange}
@@ -140,14 +143,14 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
             type="range"
             name="price_max"
             min="0"
-            max="1000"
+            max="10000"
             step="10"
-            value={filters.price_max}
+            value={priceMax} // Default max price to 10,000
             onChange={handleSliderChange}
           />
         </div>
         <p>
-          Min: {filters.price_min} - Max: {filters.price_max}
+          Min: {filters.price_min} - Max: {priceMax}
         </p>
       </div>
     </div>

@@ -16,7 +16,7 @@ function Home() {
     brand: "",
     gender: "",
     price_min: 0,
-    price_max: 1000,
+    price_max: 10000,
   }); // Current filter state
   const [searchQuery, setSearchQuery] = useState(""); // Search query
 

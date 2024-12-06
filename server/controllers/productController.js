@@ -87,7 +87,6 @@ const getProductFilter = async (req, res) => {
   }
 };
 
-// Funktion för att hantera sökning med tillämpade filter och paginering
 const getProductSearch = async (req, res) => {
   const {
     searchQuery,
@@ -100,7 +99,10 @@ const getProductSearch = async (req, res) => {
     price_max,
     page = 1,
     limit = 10,
+    sortOrder = "",  // Default to an empty string if not specified
   } = req.query;
+
+  console.log("Request query parameters:", req.query);
 
   try {
     const searchCriteria = {};
@@ -124,7 +126,7 @@ const getProductSearch = async (req, res) => {
       };
     }
     if (color) {
-      searchCriteria.productColor = { $regex: `^${color}$`, $options: "i" }; // Fix regex for color
+      searchCriteria.productColor = { $regex: `^${color}$`, $options: "i" }; // Exact match for color
     }
     if (size) {
       searchCriteria.productSize = {
@@ -132,10 +134,10 @@ const getProductSearch = async (req, res) => {
       };
     }
     if (brand) {
-      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: "i" }; // Fix regex for brand
+      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: "i" }; // Exact match for brand
     }
     if (gender) {
-      searchCriteria.productGender = { $regex: `^${gender}$`, $options: "i" }; // Fix regex for gender
+      searchCriteria.productGender = { $regex: `^${gender}$`, $options: "i" }; // Exact match for gender
     }
 
     // Price filter handling (min and max price)
@@ -150,13 +152,25 @@ const getProductSearch = async (req, res) => {
       searchCriteria.productPrice = { $lte: parseFloat(price_max) };
     }
 
+    // Sorting logic
+    let sortCriteria = { productName: 1 };  // Default to alphabetic order
+
+    if (sortOrder === "asc") {
+      sortCriteria = { productPrice: 1 };  // Lowest price first
+    } else if (sortOrder === "desc") {
+      sortCriteria = { productPrice: -1 };  // Highest price first
+    }
+
     // Fetch products based on search criteria and pagination
     const products = await Product.find(searchCriteria)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .sort(sortCriteria)
+      .skip((parseInt(page) - 1) * parseInt(limit))  // Parse page and limit to integers
+      .limit(parseInt(limit));  // Ensure limit is an integer
 
     const totalProducts = await Product.countDocuments(searchCriteria);
-    const totalPages = Math.ceil(totalProducts / limit);
+    const totalPages = Math.ceil(totalProducts / parseInt(limit));  // Calculate total pages based on the limit
+
+    console.log("Sorted products:", products);
 
     res.json({
       products,
@@ -167,6 +181,8 @@ const getProductSearch = async (req, res) => {
     res.status(500).json({ error: "Server error: " + error.message });
   }
 };
+
+
 
 const getProducts = async (req, res) => {
   const {
