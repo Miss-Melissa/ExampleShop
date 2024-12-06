@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import BuyBtn from "../buybtn/buybtn";  // Update the path as per your folder structure
+import BuyBtn from "../buybtn/buybtn";  // Ensure the path is correct
 
 const Products = ({ products, page, totalPages, handlePageChange }) => {
   const [selectedSizes, setSelectedSizes] = useState({});
@@ -15,7 +15,7 @@ const Products = ({ products, page, totalPages, handlePageChange }) => {
 
   // Handle Buy button click
   const handleBuyClick = (productId) => {
-    alert(`Product ${productId} added to cart!`);
+    alert(`Product ${productId} added to cart!`); // Replace with actual cart logic
   };
 
   return (
@@ -23,7 +23,10 @@ const Products = ({ products, page, totalPages, handlePageChange }) => {
       {/* Render the list of products */}
       {products.length > 0 ? (
         products.map((product) => (
-          <div key={product._id || `${product.productName}-${product.productPrice}`} style={{ marginBottom: "20px", padding: "10px", border: "1px solid #ddd" }}>
+          <div
+            key={product._id || `${product.productName}-${product.productPrice}`}
+            style={{ marginBottom: "20px", padding: "10px", border: "1px solid #ddd" }}
+          >
             {/* Product Link */}
             <Link to={`/products/${product._id}`} style={{ textDecoration: "none", color: "#333" }}>
               <h3>{product.productName}</h3>
@@ -37,6 +40,7 @@ const Products = ({ products, page, totalPages, handlePageChange }) => {
                       src={`http://localhost:5000/uploads/${image}`}
                       alt={`${product.productName} image ${index + 1}`}
                       style={{ width: "200px", margin: "10px" }} // Adjust styling as needed
+                      loading="lazy"  // Lazy load images
                     />
                   ))}
                 </div>
@@ -68,25 +72,35 @@ const Products = ({ products, page, totalPages, handlePageChange }) => {
             )}
 
             {/* Buy button */}
-            <BuyBtn onClick={() => handleBuyClick(product._id)} />
+            <BuyBtn productId={product._id} onClick={() => handleBuyClick(product._id)} />
           </div>
         ))
       ) : (
-        <p>No products found.</p>
+        <p>No products found</p>
       )}
 
-      {/* Pagination Controls */}
-      <div>
-        {page > 1 && (
-          <button onClick={() => handlePageChange(page - 1)}>Previous Page</button>
-        )}
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        {page < totalPages && (
-          <button onClick={() => handlePageChange(page + 1)}>Next Page</button>
-        )}
-      </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div>
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+            aria-label="Previous Page"
+          >
+            Previous
+          </button>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+            aria-label="Next Page"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

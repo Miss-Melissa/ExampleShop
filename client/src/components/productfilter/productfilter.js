@@ -1,98 +1,68 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-function ProductFilter({ filters, handleFilterChange }) {
+const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
   const [filterOptions, setFilterOptions] = useState({
     categories: [],
     colors: [],
     brands: [],
     sizes: [],
-    genders: []  // Genders array will be populated with real data from the DB
+    genders: [],
   });
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Function to fetch filter options based on selected filters
   const fetchFilterOptions = async () => {
     setLoading(true);
-    setError(null);
-
     try {
-      // Build query string based on selected filters
       const queryParams = new URLSearchParams();
       if (filters.category) queryParams.append("category", filters.category);
       if (filters.color) queryParams.append("color", filters.color);
       if (filters.size) queryParams.append("size", filters.size);
       if (filters.brand) queryParams.append("brand", filters.brand);
       if (filters.gender) queryParams.append("gender", filters.gender);
+      if (searchQuery) queryParams.append("searchQuery", searchQuery);
 
-      // Fetch filter options from the backend (including genders from DB)
       const response = await axios.get(
         `http://localhost:5000/products/filters?${queryParams.toString()}`
       );
 
       setFilterOptions({
-        categories: response.data.categories,
-        colors: response.data.colors,
-        brands: response.data.brands,
-        sizes: response.data.sizes,
-        genders: response.data.genders || [], 
+        categories: response.data.categories || [],
+        colors: response.data.colors || [],
+        brands: response.data.brands || [],
+        sizes: response.data.sizes || [],
+        genders: response.data.genders || [],
       });
     } catch (error) {
-      setError("Error fetching filter options");
       console.error("Error fetching filter options:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Effect to trigger fetching filters when the filters state changes
   useEffect(() => {
     fetchFilterOptions();
-  }, [filters]); // Triggered whenever any filter is changed
+  }, [filters, searchQuery]); // Uppdatera när filter eller sökfråga ändras
 
-  // Handle price range slider change
   const handleSliderChange = (e) => {
     const { name, value } = e.target;
 
     if (name === "price_min") {
-      const newValue = Math.min(value, filters.price_max - 10); // Ensures price_min is not greater than price_max
+      const newValue = Math.min(value, filters.price_max - 10);
       handleFilterChange({ target: { name, value: newValue } });
     } else if (name === "price_max") {
-      const newValue = Math.max(value, filters.price_min + 10); // Ensures price_max is not smaller than price_min
+      const newValue = Math.max(value, filters.price_min + 10);
       handleFilterChange({ target: { name, value: newValue } });
     }
-  };
-
-  // Check if any filter is applied
-  const isFilterApplied = () => {
-    return (
-      filters.category ||
-      filters.color ||
-      filters.brand ||
-      filters.size ||
-      filters.gender ||
-      filters.price_min !== 0 ||
-      filters.price_max !== 1000
-    );
-  };
-
-  // Handle the changes in any of the filters
-  const handleFilterChangeInternal = (e) => {
-    handleFilterChange(e);
   };
 
   return (
     <div>
       {loading && <p>Loading filter options...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* Category Filter */}
       <select
         name="category"
         value={filters.category}
-        onChange={handleFilterChangeInternal}
+        onChange={handleFilterChange}
       >
         <option value="">Select Category</option>
         {filterOptions.categories.map((category, index) => (
@@ -102,12 +72,7 @@ function ProductFilter({ filters, handleFilterChange }) {
         ))}
       </select>
 
-      {/* Color Filter */}
-      <select
-        name="color"
-        value={filters.color}
-        onChange={handleFilterChangeInternal}
-      >
+      <select name="color" value={filters.color} onChange={handleFilterChange}>
         <option value="">Select Color</option>
         {filterOptions.colors.map((color, index) => (
           <option key={index} value={color}>
@@ -116,12 +81,7 @@ function ProductFilter({ filters, handleFilterChange }) {
         ))}
       </select>
 
-      {/* Brand Filter */}
-      <select
-        name="brand"
-        value={filters.brand}
-        onChange={handleFilterChangeInternal}
-      >
+      <select name="brand" value={filters.brand} onChange={handleFilterChange}>
         <option value="">Select Brand</option>
         {filterOptions.brands.map((brand, index) => (
           <option key={index} value={brand}>
@@ -130,11 +90,10 @@ function ProductFilter({ filters, handleFilterChange }) {
         ))}
       </select>
 
-      {/* Gender Filter */}
       <select
         name="gender"
         value={filters.gender}
-        onChange={handleFilterChangeInternal}
+        onChange={handleFilterChange}
       >
         <option value="">Select Gender</option>
         {filterOptions.genders.map((gender, index) => (
@@ -144,12 +103,7 @@ function ProductFilter({ filters, handleFilterChange }) {
         ))}
       </select>
 
-      {/* Size Filter */}
-      <select
-        name="size"
-        value={filters.size}
-        onChange={handleFilterChangeInternal}
-      >
+      <select name="size" value={filters.size} onChange={handleFilterChange}>
         <option value="">Select Size</option>
         {filterOptions.sizes.map((size, index) => (
           <option key={index} value={size}>
@@ -181,10 +135,12 @@ function ProductFilter({ filters, handleFilterChange }) {
             onChange={handleSliderChange}
           />
         </div>
-        <p>Min: {filters.price_min} - Max: {filters.price_max}</p>
+        <p>
+          Min: {filters.price_min} - Max: {filters.price_max}
+        </p>
       </div>
     </div>
   );
-}
+};
 
 export default ProductFilter;

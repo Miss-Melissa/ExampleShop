@@ -1,99 +1,49 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import Products from "../../components/products/products"; // Import Products Component
+import React, { useState } from "react";
 import ProductSearch from "../../components/productsearch/productsearch";
 import ProductFilter from "../../components/productfilter/productfilter";
+import Products from "../../components/products/products";
 
-function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+const ProductsPage = ({ products, totalPages, handlePageChange }) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    category: "",
-    color: "",
-    brand: "",
-    gender: "",
     size: "",
-    price_min: 0,
-    price_max: 1000,
+    priceRange: [0, 1000], // Exempel på prisspann
   });
 
-  // Fetch products when page, searchQuery, or filters change
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch products from the API with search and filter parameters
-        const response = await axios.get("http://localhost:5000/products/search", {
-          params: {
-            page,
-            limit,
-            searchQuery,
-            ...filters, // Pass filters along with search query
-          },
-        });
-
-        if (response.data.products) {
-          setProducts(response.data.products);
-          setTotalPages(response.data.totalPages);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [page, searchQuery, filters]); // Dependencies: page, searchQuery, filters
-
-  // Handle page change (pagination)
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
+  // Hantera sökändring
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
   };
 
-  // Handle search query change
-  const handleSearch = (query) => {
-    setSearchQuery(query); // Update search query state
+  // Hantera filterändring
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  // Handle filter changes
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
-  };
-
-  // If loading, display a loading message
-  if (loading) return <p>Loading products...</p>;
+  // Filtrera produkterna baserat på sökquery och filter
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.productName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSize = filters.size ? product.productSize.includes(filters.size) : true;
+    const matchesPrice = product.productPrice >= filters.priceRange[0] && product.productPrice <= filters.priceRange[1];
+    
+    return matchesSearch && matchesSize && matchesPrice;
+  });
 
   return (
     <div>
-      <h1>Welcome to the Shop!</h1>
+      {/* Sök- och filterkomponenter */}
+      <ProductSearch searchQuery={searchQuery} onSearchChange={handleSearchChange} />
+      <ProductFilter filters={filters} onFilterChange={handleFilterChange} />
 
-      {/* Search Component */}
-      <ProductSearch onSearch={handleSearch} />
-
-      {/* Filter Component */}
-      <ProductFilter filters={filters} handleFilterChange={handleFilterChange} />
-
-      {/* Pass the fetched products, page, totalPages, and page change handler as props */}
+      {/* Produktlistan */}
       <Products
-        products={products}
-        page={page}
+        products={filteredProducts}
+        page={1} // Sätt aktuellt sidnummer
         totalPages={totalPages}
         handlePageChange={handlePageChange}
       />
     </div>
   );
-}
+};
 
-export default Home;
+export default ProductsPage;

@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
     productCategory: { type: [String], required: true },
     productBrand: { type: String, required: true },
     productColor: { type: String, required: true },
-    productGender: { type: String, required: true }, // Gender is a required string
+    productGender: { type: String, required: true }, 
 });
 
 // Adding indexes for faster searching

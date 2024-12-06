@@ -1,83 +1,16 @@
 const Product = require("../models/productModel");
 const mongoose = require("mongoose");
 
-// Function to fetch distinct filter options
+
+// Funktion som hämtar filteralternativ baserat på sökning och filtrering
 const getProductFilter = async (req, res) => {
-  const { category, color, size, brand, gender } = req.query;
-
-  try {
-    // Initialize the search criteria based on selected filters
-    const searchCriteria = {};
-
-    // If category is selected, filter based on productCategory
-    if (category) {
-      const categoryArray = category.split(',').map(c => c.trim());
-      searchCriteria.productCategory = { $in: categoryArray };
-    }
-
-    // If color is selected, filter based on productColor
-    if (color) {
-      searchCriteria.productColor = { $regex: `^${color}$`, $options: 'i' };
-    }
-
-    // If size is selected, filter based on productSize
-    if (size) {
-      const sizeArray = size.split(',').map(s => s.trim());
-      searchCriteria.productSize = { $in: sizeArray };
-    }
-
-    // If brand is selected, filter based on productBrand
-    if (brand) {
-      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
-    }
-
-    // If gender is selected, normalize and filter based on productGender
-    if (gender) {
-      const formattedGender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase(); // Normalize gender
-      searchCriteria.productGender = { $regex: `^${formattedGender}$`, $options: 'i' };
-    }
-
-    // Fetch the distinct filter options based on the search criteria
-    const categories = await Product.distinct("productCategory", searchCriteria);
-    const colors = await Product.distinct("productColor", searchCriteria);
-    const brands = await Product.distinct("productBrand", searchCriteria);
-    const genders = await Product.distinct("productGender", searchCriteria);
-    const sizes = await Product.distinct("productSize", searchCriteria);
-
-    // Send back the available filter options
-    res.json({
-      categories,
-      colors,
-      brands,
-      sizes,
-      genders,
-    });
-  } catch (err) {
-    console.error("Error fetching filter options:", err.message);
-    res.status(500).json({ message: "Error fetching filter options" });
-  }
-};
-
-const getProductSearch = async (req, res) => {
-  const {
-    searchQuery,
-    category,
-    color,
-    size,
-    brand,
-    gender,
-    price_min,
-    price_max,
-    page = 1,
-    limit = 10,
-  } = req.query;
+  const { searchQuery, category, color, size, brand, gender } = req.query;
 
   try {
     const searchCriteria = {};
 
-    // Generic search query (exclude gender here for precision)
     if (searchQuery && searchQuery.trim()) {
-      const searchRegex = { $regex: searchQuery, $options: 'i' };
+      const searchRegex = new RegExp(searchQuery, 'i');
       searchCriteria.$or = [
         { productName: searchRegex },
         { productCategory: searchRegex },
@@ -87,67 +20,93 @@ const getProductSearch = async (req, res) => {
       ];
     }
 
-    // Explicit gender filter (if provided)
-    if (gender && gender.trim()) {
+    // Add other filter criteria
+    if (category) {
+      searchCriteria.productCategory = { $in: category.split(',').map(c => c.trim()) };
+    }
+    if (color) {
+      searchCriteria.productColor = { $regex: `^${color}$`, $options: 'i' };
+    }
+    if (size) {
+      searchCriteria.productSize = { $in: size.split(',').map(s => s.trim()) };
+    }
+    if (brand) {
+      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
+    }
+    if (gender) {
       searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
     }
 
-    // Apply other filters (category, color, size, brand, price)
-    if (category && category.trim()) {
-      searchCriteria.productCategory = { $regex: category, $options: 'i' };
-    }
-
-    if (color && color.trim()) {
-      searchCriteria.productColor = { $regex: color, $options: 'i' };
-    }
-
-    if (brand && brand.trim()) {
-      searchCriteria.productBrand = { $regex: brand, $options: 'i' };
-    }
-
-    if (size && size.trim()) {
-      searchCriteria.productSize = size;
-    }
-
-    // Apply price range filters
-    if (price_min || price_max) {
-      searchCriteria.productPrice = {};
-      if (price_min) searchCriteria.productPrice.$gte = parseFloat(price_min);
-      if (price_max) searchCriteria.productPrice.$lte = parseFloat(price_max);
-    }
-
-    const skip = (page - 1) * limit;
-
-    // Fetch products from DB with applied filters
-    const products = await Product.find(searchCriteria)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Count total products for pagination
-    const totalProducts = await Product.countDocuments(searchCriteria);
-    const totalPages = Math.ceil(totalProducts / limit);
-
-    // Get the available filters based on the current search criteria
     const categories = await Product.distinct("productCategory", searchCriteria);
     const colors = await Product.distinct("productColor", searchCriteria);
     const brands = await Product.distinct("productBrand", searchCriteria);
+    const genders = await Product.distinct("productGender", searchCriteria);
     const sizes = await Product.distinct("productSize", searchCriteria);
 
-    // Send back the search results and dynamic filter options
+    res.json({
+      categories,
+      colors,
+      brands,
+      sizes,
+      genders,
+    });
+  } catch (err) {
+    console.error("Error fetching filter options:", err.message);
+    res.status(500).json({ message: "Error fetching filter options: " + err.message });
+  }
+};
+
+// Function to handle search with applied filters and pagination
+const getProductSearch = async (req, res) => {
+  const { searchQuery, category, color, size, brand, gender, page = 1, limit = 10 } = req.query;
+
+  try {
+    const searchCriteria = {};
+
+    // Apply search query if provided
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = new RegExp(searchQuery, 'i');
+      searchCriteria.$or = [
+        { productName: searchRegex },
+        { productCategory: searchRegex },
+        { productBrand: searchRegex },
+        { productColor: searchRegex },
+        { productGender: searchRegex },
+      ];
+    }
+
+    // Add filter parameters
+    if (category) {
+      searchCriteria.productCategory = { $in: category.split(',').map(c => c.trim()) };
+    }
+    if (color) {
+      searchCriteria.productColor = { $regex: `^${color}$`, $options: 'i' };
+    }
+    if (size) {
+      searchCriteria.productSize = { $in: size.split(',').map(s => s.trim()) };
+    }
+    if (brand) {
+      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
+    }
+    if (gender) {
+      searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
+    }
+
+    // Fetch products based on search criteria and pagination
+    const products = await Product.find(searchCriteria)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalProducts = await Product.countDocuments(searchCriteria);
+    const totalPages = Math.ceil(totalProducts / limit);
+
     res.json({
       products,
-      totalProducts,
       totalPages,
-      filters: {
-        categories,
-        colors,
-        brands,
-        sizes,
-      },
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error: " + error.message });
   }
 };
 
