@@ -1,26 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
-const ProductSearch = ({ onSearch }) => {
+const ProductSearch = ({ onSearch, onClear }) => {
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-
-  // Uppdatera debounced query efter en fördröjning
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [query]);
-
-  useEffect(() => {
-    if (debouncedQuery) {
-      onSearch(debouncedQuery);  // Skicka den debouncerade queryn till föräldern
-    }
-  }, [debouncedQuery, onSearch]);
 
   const handleSearchChange = (e) => {
     setQuery(e.target.value);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      // When Enter is pressed, if query is empty, show all products
+      onSearch(query.trim() === "" ? "" : query);
+    }
+  };
+
+  const handleClear = () => {
+    setQuery(""); // Clear the input field
+    onClear(); // Reset filters when search is cleared
   };
 
   return (
@@ -29,8 +25,11 @@ const ProductSearch = ({ onSearch }) => {
         type="text"
         value={query}
         onChange={handleSearchChange}
+        onKeyPress={handleKeyPress}  // Trigger search on Enter key press
         placeholder="Search for products"
       />
+      {/* Clear button */}
+      <button onClick={handleClear}>Clear</button>
     </div>
   );
 };

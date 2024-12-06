@@ -77,10 +77,25 @@ function Home() {
     setPage(1); // Reset to the first page on search
   };
 
+  // Clear search and reset filters
+  const handleClearSearch = () => {
+    setSearchQuery(""); // Clear search query
+    setFilters({ // Reset all filters to their default values
+      category: "",
+      color: "",
+      size: "",
+      brand: "",
+      gender: "",
+      price_min: 0,
+      price_max: 1000,
+    });
+    setPage(1); // Reset to the first page
+  };
+
   return (
     <div>
-      {/* Search Component */}
-      <ProductSearch onSearch={handleSearch} />
+      {/* Pass handleClearSearch to ProductSearch component */}
+      <ProductSearch onSearch={handleSearch} onClear={handleClearSearch} />
 
       {/* Filter Component */}
       <ProductFilter
