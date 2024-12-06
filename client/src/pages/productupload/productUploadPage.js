@@ -9,12 +9,18 @@ const ProductUploadPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const fetchProducts = async () => {
+  // Fetch the products from the server
+  const fetchProducts = async (page = 1, limit = 10) => {
     try {
-      const response = await axios.get("http://localhost:5000/products");
-      console.log(response.data);  // Log the API response to verify data
+      const response = await axios.get("http://localhost:5000/products", {
+        params: {
+          page: 1,   // The first page
+          limit: 10  // Showing 10 products per page
+        }
+      });
+      console.log(response.data); // Kontrollera att rätt data returneras'
       if (response.data && Array.isArray(response.data.products)) {
-        setProducts(response.data.products); // Set the products if data.products is an array
+        setProducts(response.data.products);
       } else {
         setError("Invalid data format received.");
       }
@@ -25,10 +31,13 @@ const ProductUploadPage = () => {
       setLoading(false);
     }
   };
+  
 
+  // Handle delete product action
   const handleDelete = async (_id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
+        // Make a DELETE request to remove the product
         await axios.delete(`http://localhost:5000/products/${_id}`);
         setProducts(products.filter((product) => product._id !== _id)); // Filter out the deleted product
         alert("Product deleted successfully!");
@@ -39,12 +48,14 @@ const ProductUploadPage = () => {
     }
   };
 
+  // Handle update product action
   const handleUpdate = (_id) => {
     navigate(`/products/update/${_id}`);
   };
 
+  // Fetch products when the component loads
   useEffect(() => {
-    fetchProducts(); // Fetch products when component loads
+    fetchProducts();
   }, []);
 
   return (

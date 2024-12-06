@@ -1,6 +1,26 @@
 const Product = require("../models/productModel");
 const mongoose = require("mongoose");
 
+const getProducts = async (req, res) => {
+  try {
+    // Hämta alla produkter utan några filter eller pagination
+    const products = await Product.find({});
+
+    // Skicka tillbaka alla produkter
+    res.status(200).json({
+      products,
+      totalProducts: products.length,  // Antal produkter som finns
+      totalPages: 1,  // Eftersom vi hämtar alla, sätts det till 1
+      currentPage: 1,  // Sätt nuvarande sida till 1
+      hasNextPage: false,  // Eftersom vi hämtar alla, finns det ingen nästa sida
+      hasPreviousPage: false,  // Eftersom vi hämtar alla, finns det ingen föregående sida
+    });
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({ message: "Error fetching products" });
+  }
+};
+
 // Funktion som hämtar filteralternativ baserat på sökning och filtrering
 const getProductFilter = async (req, res) => {
   const {
@@ -184,67 +204,7 @@ const getProductSearch = async (req, res) => {
 
 
 
-const getProducts = async (req, res) => {
-  const {
-    query = "", // Search term for product names
-    category = "", // Comma-separated categories
-    color = "", // Single color
-    brand = "", // Single brand
-    gender = "", // Single gender
-    size = "", // Comma-separated sizes
-    price_min = 0, // Minimum price
-    price_max = 1000, // Maximum price
-    page = 1, // Page number
-    limit = 10, // Number of products per page
-  } = req.query;
 
-  // Parse numerical values with fallback defaults
-  const parsedPage = Math.max(parseInt(page, 10) || 1, 1); // Ensure page >= 1
-  const parsedLimit = Math.max(parseInt(limit, 10) || 10, 1); // Ensure limit >= 1
-  const minPrice = Math.max(parseFloat(price_min) || 0, 0); // Ensure non-negative price
-  const maxPrice = parseFloat(price_max) || Infinity; // Allow upper price to default to Infinity
-
-  // Parse comma-separated filters into arrays
-  const sizeArray = size ? size.split(",").map((s) => s.trim()) : [];
-  const categoryArray = category
-    ? category.split(",").map((c) => c.trim())
-    : [];
-
-  // Build search criteria for MongoDB query
-  const searchCriteria = {
-    ...(query && { productName: { $regex: query, $options: "i" } }), // Case-insensitive regex for product name
-    ...(categoryArray.length && { productCategory: { $in: categoryArray } }), // Match any of the given categories
-    ...(color && { productColor: { $regex: `^${color}$`, $options: "i" } }), // Case-insensitive match for color
-    ...(brand && { productBrand: { $regex: `^${brand}$`, $options: "i" } }), // Case-insensitive match for brand
-    ...(gender && { productGender: { $regex: `^${gender}$`, $options: "i" } }), // Case-insensitive match for gender
-    ...(sizeArray.length && { productSize: { $in: sizeArray } }), // Match any of the given sizes
-    productPrice: { $gte: minPrice, $lte: maxPrice }, // Price range
-  };
-
-  try {
-    // Count total matching products
-    const totalProducts = await Product.countDocuments(searchCriteria);
-
-    // Fetch paginated products
-    const products = await Product.find(searchCriteria)
-      .skip((parsedPage - 1) * parsedLimit) // Calculate offset
-      .limit(parsedLimit) // Limit results per page
-      .lean(); // Use lean() to optimize read performance if only retrieving data
-
-    // Send response with pagination metadata
-    res.status(200).json({
-      products,
-      totalProducts,
-      totalPages: Math.ceil(totalProducts / parsedLimit),
-      currentPage: parsedPage,
-      hasNextPage: parsedPage < Math.ceil(totalProducts / parsedLimit),
-      hasPreviousPage: parsedPage > 1,
-    });
-  } catch (err) {
-    console.error("Error fetching products:", err.message);
-    res.status(500).json({ message: "Error fetching products" });
-  }
-};
 
 // Function to get a product by ID
 const getProductById = async (req, res) => {
