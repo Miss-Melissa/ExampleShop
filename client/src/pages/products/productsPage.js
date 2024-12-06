@@ -1,74 +1,100 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Products from "../../components/products/products";
 import ProductSearch from "../../components/productsearch/productsearch";
 import ProductFilter from "../../components/productfilter/productfilter";
+import Products from "../../components/products/products";
 
-const ProductsPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");  // För sökfråga
+
+const ProductPage = () => {
+  const [products, setProducts] = useState([]); // Store fetched products
+  const [totalPages, setTotalPages] = useState(1); // Total pages for pagination
+  const [page, setPage] = useState(1); // Current page
   const [filters, setFilters] = useState({
     category: "",
     color: "",
-    brand: "",
     size: "",
+    brand: "",
     gender: "",
-  });
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+    price_min: 0,
+    price_max: 1000,
+  }); // Current filter state
+  const [searchQuery, setSearchQuery] = useState(""); // Search query
 
-  // Hantera förändring av sökquery
-  const handleSearchChange = (query) => {
-    setSearchQuery(query);
+  // Fetch products from the backend
+  const fetchProducts = async () => {
+    try {
+      const queryParams = new URLSearchParams({
+        page,
+        limit: 10,
+        searchQuery,
+        category: filters.category,
+        color: filters.color,
+        size: filters.size,
+        brand: filters.brand,
+        gender: filters.gender,
+        price_min: filters.price_min,
+        price_max: filters.price_max,
+      });
+
+      const response = await axios.get(
+        `http://localhost:5000/products/search?${queryParams.toString()}`
+      );
+
+      setProducts(response.data.products); // Update the products
+      setTotalPages(response.data.totalPages); // Update total pages
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
   };
 
-  // Hantera förändring av filter
+  // Fetch products whenever filters, search query, or page changes
+  useEffect(() => {
+    fetchProducts();
+  }, [filters, searchQuery, page]);
+
+  // Handle filter change
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
       ...prevFilters,
       [name]: value,
     }));
+    setPage(1); // Reset to the first page on filter change
   };
 
-  // Fetch data baserat på både sökquery och filter
-  const fetchFilteredProducts = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      if (searchQuery) queryParams.append("searchQuery", searchQuery);
-      if (filters.category) queryParams.append("category", filters.category);
-      if (filters.color) queryParams.append("color", filters.color);
-      if (filters.size) queryParams.append("size", filters.size);
-      if (filters.brand) queryParams.append("brand", filters.brand);
-      if (filters.gender) queryParams.append("gender", filters.gender);
-
-      const response = await axios.get(
-        `http://localhost:5000/products?${queryParams.toString()}`
-      );
-      setFilteredProducts(response.data);  // Uppdatera produktlistan
-    } catch (error) {
-      console.error("Error fetching filtered products:", error);
-    } finally {
-      setLoading(false);
-    }
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
   };
 
-  useEffect(() => {
-    fetchFilteredProducts();  // Hämta produkter när sökquery eller filter ändras
-  }, [searchQuery, filters]);
+  // Handle search query change
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setPage(1); // Reset to the first page on search
+  };
 
   return (
     <div>
-      <ProductSearch onSearch={handleSearchChange} />
-      <ProductFilter filters={filters} handleFilterChange={handleFilterChange} searchQuery={searchQuery} />
+      <h1>Product Page</h1>
+      {/* Search Bar */}
+      <ProductSearch onSearch={handleSearch} />
 
-      {loading ? (
-        <p>Loading products...</p>
-      ) : (
-        <Products products={filteredProducts} />
-      )}
+      {/* Filters */}
+      <ProductFilter
+        filters={filters}
+        handleFilterChange={handleFilterChange}
+        searchQuery={searchQuery}
+      />
+
+      {/* Products List */}
+      <Products
+        products={products}
+        page={page}
+        totalPages={totalPages}
+        handlePageChange={handlePageChange}
+      />
     </div>
   );
 };
 
-export default ProductsPage;
+export default ProductPage;
