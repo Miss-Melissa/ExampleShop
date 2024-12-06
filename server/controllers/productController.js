@@ -3,17 +3,17 @@ const mongoose = require("mongoose");
 
 const getProducts = async (req, res) => {
   try {
-    // Hämta alla produkter utan några filter eller pagination
-    const products = await Product.find({});
+    // Hämta alla produkter utan några filter eller pagination, sortera efter produktnamn i bokstavsordning
+    const products = await Product.find({}).sort({ productName: 1 }); // 1 = ascending order, -1 = descending order
 
     // Skicka tillbaka alla produkter
     res.status(200).json({
       products,
-      totalProducts: products.length,  // Antal produkter som finns
-      totalPages: 1,  // Eftersom vi hämtar alla, sätts det till 1
-      currentPage: 1,  // Sätt nuvarande sida till 1
-      hasNextPage: false,  // Eftersom vi hämtar alla, finns det ingen nästa sida
-      hasPreviousPage: false,  // Eftersom vi hämtar alla, finns det ingen föregående sida
+      totalProducts: products.length, // Antal produkter som finns
+      totalPages: 1, // Eftersom vi hämtar alla, sätts det till 1
+      currentPage: 1, // Sätt nuvarande sida till 1
+      hasNextPage: false, // Eftersom vi hämtar alla, finns det ingen nästa sida
+      hasPreviousPage: false, // Eftersom vi hämtar alla, finns det ingen föregående sida
     });
   } catch (err) {
     console.error("Error fetching products:", err);
@@ -119,7 +119,7 @@ const getProductSearch = async (req, res) => {
     price_max,
     page = 1,
     limit = 10,
-    sortOrder = "",  // Default to an empty string if not specified
+    sortOrder = "", // Default to an empty string if not specified
   } = req.query;
 
   console.log("Request query parameters:", req.query);
@@ -173,22 +173,22 @@ const getProductSearch = async (req, res) => {
     }
 
     // Sorting logic
-    let sortCriteria = { productName: 1 };  // Default to alphabetic order
+    let sortCriteria = { productName: 1 }; // Default to alphabetic order
 
     if (sortOrder === "asc") {
-      sortCriteria = { productPrice: 1 };  // Lowest price first
+      sortCriteria = { productPrice: 1 }; // Lowest price first
     } else if (sortOrder === "desc") {
-      sortCriteria = { productPrice: -1 };  // Highest price first
+      sortCriteria = { productPrice: -1 }; // Highest price first
     }
 
     // Fetch products based on search criteria and pagination
     const products = await Product.find(searchCriteria)
       .sort(sortCriteria)
-      .skip((parseInt(page) - 1) * parseInt(limit))  // Parse page and limit to integers
-      .limit(parseInt(limit));  // Ensure limit is an integer
+      .skip((parseInt(page) - 1) * parseInt(limit)) // Parse page and limit to integers
+      .limit(parseInt(limit)); // Ensure limit is an integer
 
     const totalProducts = await Product.countDocuments(searchCriteria);
-    const totalPages = Math.ceil(totalProducts / parseInt(limit));  // Calculate total pages based on the limit
+    const totalPages = Math.ceil(totalProducts / parseInt(limit)); // Calculate total pages based on the limit
 
     console.log("Sorted products:", products);
 
@@ -201,10 +201,6 @@ const getProductSearch = async (req, res) => {
     res.status(500).json({ error: "Server error: " + error.message });
   }
 };
-
-
-
-
 
 // Function to get a product by ID
 const getProductById = async (req, res) => {

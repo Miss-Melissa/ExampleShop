@@ -14,9 +14,9 @@ const ProductUploadPage = () => {
     try {
       const response = await axios.get("http://localhost:5000/products", {
         params: {
-          page: 1,   // The first page
-          limit: 10  // Showing 10 products per page
-        }
+          page: 1, // The first page
+          limit: 10, // Showing 10 products per page
+        },
       });
       console.log(response.data); // Kontrollera att rätt data returneras'
       if (response.data && Array.isArray(response.data.products)) {
@@ -31,7 +31,6 @@ const ProductUploadPage = () => {
       setLoading(false);
     }
   };
-  
 
   // Handle delete product action
   const handleDelete = async (_id) => {
@@ -100,7 +99,9 @@ const ProductUploadPage = () => {
                 <td>{product.productName}</td>
                 <td>${Number(product.productPrice).toFixed(2)}</td>
                 <td>
-                  <button onClick={() => handleUpdate(product._id)}>Update</button>
+                  <button onClick={() => handleUpdate(product._id)}>
+                    Update
+                  </button>
                   <button
                     style={{ marginLeft: "10px" }}
                     onClick={() => handleDelete(product._id)}
