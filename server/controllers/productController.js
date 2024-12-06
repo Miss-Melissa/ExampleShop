@@ -1,16 +1,25 @@
 const Product = require("../models/productModel");
 const mongoose = require("mongoose");
 
-
 // Funktion som hämtar filteralternativ baserat på sökning och filtrering
 const getProductFilter = async (req, res) => {
-  const { searchQuery, category, color, size, brand, gender } = req.query;
+  const {
+    searchQuery,
+    category,
+    color,
+    size,
+    brand,
+    gender,
+    price_min,
+    price_max,
+  } = req.query;
 
   try {
     const searchCriteria = {};
 
+    // Search query handling
     if (searchQuery && searchQuery.trim()) {
-      const searchRegex = new RegExp(searchQuery, 'i');
+      const searchRegex = new RegExp(searchQuery, "i");
       searchCriteria.$or = [
         { productName: searchRegex },
         { productCategory: searchRegex },
@@ -22,22 +31,42 @@ const getProductFilter = async (req, res) => {
 
     // Add other filter criteria
     if (category) {
-      searchCriteria.productCategory = { $in: category.split(',').map(c => c.trim()) };
+      searchCriteria.productCategory = {
+        $in: category.split(",").map((c) => c.trim()),
+      };
     }
     if (color) {
-      searchCriteria.productColor = { $regex: `^${color}$`, $options: 'i' };
+      searchCriteria.productColor = { $regex: `^${color}$`, $options: "i" }; // Fix regex for color
     }
     if (size) {
-      searchCriteria.productSize = { $in: size.split(',').map(s => s.trim()) };
+      searchCriteria.productSize = {
+        $in: size.split(",").map((s) => s.trim()),
+      };
     }
     if (brand) {
-      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
+      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: "i" }; // Fix regex for brand
     }
     if (gender) {
-      searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
+      searchCriteria.productGender = { $regex: `^${gender}$`, $options: "i" }; // Fix regex for gender
     }
 
-    const categories = await Product.distinct("productCategory", searchCriteria);
+    // Price filter handling (min and max price)
+    if (price_min && price_max) {
+      searchCriteria.productPrice = {
+        $gte: parseFloat(price_min),
+        $lte: parseFloat(price_max),
+      };
+    } else if (price_min) {
+      searchCriteria.productPrice = { $gte: parseFloat(price_min) };
+    } else if (price_max) {
+      searchCriteria.productPrice = { $lte: parseFloat(price_max) };
+    }
+
+    // Fetch distinct filter options based on the search criteria
+    const categories = await Product.distinct(
+      "productCategory",
+      searchCriteria
+    );
     const colors = await Product.distinct("productColor", searchCriteria);
     const brands = await Product.distinct("productBrand", searchCriteria);
     const genders = await Product.distinct("productGender", searchCriteria);
@@ -52,20 +81,33 @@ const getProductFilter = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching filter options:", err.message);
-    res.status(500).json({ message: "Error fetching filter options: " + err.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching filter options: " + err.message });
   }
 };
 
-// Function to handle search with applied filters and pagination
+// Funktion för att hantera sökning med tillämpade filter och paginering
 const getProductSearch = async (req, res) => {
-  const { searchQuery, category, color, size, brand, gender, page = 1, limit = 10 } = req.query;
+  const {
+    searchQuery,
+    category,
+    color,
+    size,
+    brand,
+    gender,
+    price_min,
+    price_max,
+    page = 1,
+    limit = 10,
+  } = req.query;
 
   try {
     const searchCriteria = {};
 
     // Apply search query if provided
     if (searchQuery && searchQuery.trim()) {
-      const searchRegex = new RegExp(searchQuery, 'i');
+      const searchRegex = new RegExp(searchQuery, "i");
       searchCriteria.$or = [
         { productName: searchRegex },
         { productCategory: searchRegex },
@@ -77,19 +119,35 @@ const getProductSearch = async (req, res) => {
 
     // Add filter parameters
     if (category) {
-      searchCriteria.productCategory = { $in: category.split(',').map(c => c.trim()) };
+      searchCriteria.productCategory = {
+        $in: category.split(",").map((c) => c.trim()),
+      };
     }
     if (color) {
-      searchCriteria.productColor = { $regex: `^${color}$`, $options: 'i' };
+      searchCriteria.productColor = { $regex: `^${color}$`, $options: "i" }; // Fix regex for color
     }
     if (size) {
-      searchCriteria.productSize = { $in: size.split(',').map(s => s.trim()) };
+      searchCriteria.productSize = {
+        $in: size.split(",").map((s) => s.trim()),
+      };
     }
     if (brand) {
-      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: 'i' };
+      searchCriteria.productBrand = { $regex: `^${brand}$`, $options: "i" }; // Fix regex for brand
     }
     if (gender) {
-      searchCriteria.productGender = { $regex: `^${gender}$`, $options: 'i' };
+      searchCriteria.productGender = { $regex: `^${gender}$`, $options: "i" }; // Fix regex for gender
+    }
+
+    // Price filter handling (min and max price)
+    if (price_min && price_max) {
+      searchCriteria.productPrice = {
+        $gte: parseFloat(price_min),
+        $lte: parseFloat(price_max),
+      };
+    } else if (price_min) {
+      searchCriteria.productPrice = { $gte: parseFloat(price_min) };
+    } else if (price_max) {
+      searchCriteria.productPrice = { $lte: parseFloat(price_max) };
     }
 
     // Fetch products based on search criteria and pagination
@@ -109,9 +167,6 @@ const getProductSearch = async (req, res) => {
     res.status(500).json({ error: "Server error: " + error.message });
   }
 };
-
-
-
 
 const getProducts = async (req, res) => {
   const {
@@ -181,18 +236,18 @@ const getProductById = async (req, res) => {
   console.log("Received request for product ID:", id); // Log the ID
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid product ID' });
+    return res.status(400).json({ message: "Invalid product ID" });
   }
 
   try {
-      const product = await Product.findById(id);
-      if (!product) {
-          return res.status(404).json({ message: 'Product not found' });
-      }
-      res.json(product);
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json(product);
   } catch (err) {
-      console.error('Error fetching product by ID:', err.message);
-      res.status(500).json({ message: 'Error fetching product by ID' });
+    console.error("Error fetching product by ID:", err.message);
+    res.status(500).json({ message: "Error fetching product by ID" });
   }
 };
 
@@ -237,7 +292,8 @@ const createProduct = async (req, res) => {
     }
 
     // Standardize gender to proper format (Capitalized)
-    const formattedGenderProperCase = formattedGender.charAt(0).toUpperCase() + formattedGender.slice(1);
+    const formattedGenderProperCase =
+      formattedGender.charAt(0).toUpperCase() + formattedGender.slice(1);
 
     // Handle product categories: Parse if it's not already an array
     let parsedCategory = Array.isArray(productCategory)

@@ -47,18 +47,25 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
   const handleSliderChange = (e) => {
     const { name, value } = e.target;
 
+    // Convert the value to a number
+    const newValue = Number(value);
+
     if (name === "price_min") {
-      const newValue = Math.min(value, filters.price_max - 10);
-      handleFilterChange({ target: { name, value: newValue } });
+      // Ensure price_min doesn't exceed price_max - 10
+      const clampedValue = Math.min(newValue, filters.price_max - 10);
+      handleFilterChange({ target: { name, value: clampedValue } });
     } else if (name === "price_max") {
-      const newValue = Math.max(value, filters.price_min + 10);
-      handleFilterChange({ target: { name, value: newValue } });
+      // Ensure price_max doesn't go below price_min + 10
+      const clampedValue = Math.max(newValue, filters.price_min + 10);
+      handleFilterChange({ target: { name, value: clampedValue } });
     }
   };
 
   return (
     <div>
       {loading && <p>Loading filter options...</p>}
+
+      {/* Category Filter */}
       <select
         name="category"
         value={filters.category}
@@ -72,6 +79,7 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
         ))}
       </select>
 
+      {/* Color Filter */}
       <select name="color" value={filters.color} onChange={handleFilterChange}>
         <option value="">Select Color</option>
         {filterOptions.colors.map((color, index) => (
@@ -81,6 +89,7 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
         ))}
       </select>
 
+      {/* Brand Filter */}
       <select name="brand" value={filters.brand} onChange={handleFilterChange}>
         <option value="">Select Brand</option>
         {filterOptions.brands.map((brand, index) => (
@@ -90,6 +99,7 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
         ))}
       </select>
 
+      {/* Gender Filter */}
       <select
         name="gender"
         value={filters.gender}
@@ -103,6 +113,7 @@ const ProductFilter = ({ filters, handleFilterChange, searchQuery }) => {
         ))}
       </select>
 
+      {/* Size Filter */}
       <select name="size" value={filters.size} onChange={handleFilterChange}>
         <option value="">Select Size</option>
         {filterOptions.sizes.map((size, index) => (

@@ -4,7 +4,6 @@ import ProductSearch from "../../components/productsearch/productsearch";
 import ProductFilter from "../../components/productfilter/productfilter";
 import Products from "../../components/products/products";
 
-
 const ProductPage = () => {
   const [products, setProducts] = useState([]); // Store fetched products
   const [totalPages, setTotalPages] = useState(1); // Total pages for pagination
@@ -75,7 +74,6 @@ const ProductPage = () => {
 
   return (
     <div>
-      <h1>Product Page</h1>
       {/* Search Bar */}
       <ProductSearch onSearch={handleSearch} />
 
@@ -85,6 +83,7 @@ const ProductPage = () => {
         handleFilterChange={handleFilterChange}
         searchQuery={searchQuery}
       />
+      <h1>Product Page</h1>
 
       {/* Products List */}
       <Products
